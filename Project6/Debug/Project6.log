@@ -1,0 +1,4 @@
+﻿  Main.c
+D:\Usuarios\Romina\source\repos\Project6\Project6\Main.c(104,40): warning C4013: 'IMG_Load' sin definir; se supone que extern devuelve como resultado int
+D:\Usuarios\Romina\source\repos\Project6\Project6\Main.c(104,1): warning C4047: 'inicializando': 'SDL_Surface *' es distinto en los niveles de direccionamiento indirecto de 'int'
+  Project6.vcxproj -> D:\Usuarios\Romina\source\repos\Project6\Debug\Project6.exe
