@@ -3,10 +3,10 @@
 #include <stdbool.h>
 
 
-#define ANCHO 640
-#define ALTURA 700
-#define CELDA_TAM 28
-#define PACMAN_TAM 25
+#define ANCHO 530
+#define ALTURA 630
+#define CELDA_TAM 25
+#define PACMAN_TAM 23
 #define N 23
 #define M 19
 
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
 
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
-    pacmanY = 405 - offsetY;
+    pacmanY = 363 - offsetY;
 
     if (!ventana || !renderer) {
         printf("Error: %s\n", SDL_GetError());
