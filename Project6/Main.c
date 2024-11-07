@@ -4,8 +4,8 @@
 
 
 #define ANCHO 640
-#define ALTURA 770
-#define CELDA_TAM 30
+#define ALTURA 700
+#define CELDA_TAM 28
 #define PACMAN_TAM 25
 #define N 23
 #define M 19
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
 
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
-    pacmanY = 445 - offsetY;
+    pacmanY = 405 - offsetY;
 
     if (!ventana || !renderer) {
         printf("Error: %s\n", SDL_GetError());
