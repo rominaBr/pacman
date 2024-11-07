@@ -10,7 +10,7 @@
 #define N 23
 #define M 19
 
-#define MARGEN_SUPERIOR 50
+#define MARGEN_SUPERIOR 20
 #define ANCHO_LABERINTO (M * CELDA_TAM)
 #define ALTURA_LABERINTO (N * CELDA_TAM)
 
@@ -34,7 +34,7 @@ int laberinto[N][M] = {
     {1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
     {5, 2, 2, 4, 0, 7, 2, 14, 0, 12, 0, 13, 2, 8, 0, 3, 2, 2, 6},
     {0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0},
-    {2, 2, 2, 6, 0, 12, 0, 3, 2, 0, 2, 4, 0, 12, 0, 5, 2, 2, 2},
+    {2, 2, 2, 6, 0, 12, 0, 3, 2, -1, 2, 4, 0, 12, 0, 5, 2, 2, 2},
     {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
     {2, 2, 2, 4, 0, 11, 0, 1, 0, 0, 0, 1, 0, 11, 0, 3, 2, 2, 2},
     {0, 0, 0, 1, 0, 1, 0, 5, 2, 2, 2, 6, 0, 1, 0, 1, 0, 0, 0},
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
 
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
-    pacmanY = 456 - offsetY;
+    pacmanY = 445 - offsetY;
 
     if (!ventana || !renderer) {
         printf("Error: %s\n", SDL_GetError());
