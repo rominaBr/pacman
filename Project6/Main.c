@@ -211,8 +211,7 @@ void moverPacman() {
         if (contadorInmunidad <= 0) {
             inmune = false; 
         }
-    }
-    
+    }    
 
 }
 
@@ -234,7 +233,6 @@ void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
 }
 
 
-
 int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_EVERYTHING); 
@@ -242,6 +240,12 @@ int main(int argc, char* argv[]) {
 
     SDL_Window* ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
+
+    if (!ventana || !renderer) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
 
     if (TTF_Init() == -1) {
         printf("Error al inicializar SDL_ttf: %s\n", TTF_GetError());
@@ -257,15 +261,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;
-
-    if (!ventana || !renderer) {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
+  
 
     SDL_Texture* texturaVertical = crearTextura(renderer, "assets/laberinto/vertical.png");
     SDL_Texture* texturaVertical7 = crearTextura(renderer, "assets/laberinto/vertical7.png");
@@ -284,12 +282,13 @@ int main(int argc, char* argv[]) {
     SDL_Texture* texturaComida = crearTextura(renderer, "assets/pacman/comida.png");
 
     if (!texturaVertical || !texturaHorizontal || !texturaEsquina3 || !texturaEsquina4 || !texturaEsquina5 || 
-        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12|| !texturaHorizontal13 || !texturaHorizontal14
-        || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
+        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12||
+        !texturaHorizontal13 || !texturaHorizontal14 || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
         printf("Error al cargar las texturas: %s\n", SDL_GetError());
         SDL_Quit();
         return 1;
     }
+   
     
    
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
@@ -297,6 +296,8 @@ int main(int argc, char* argv[]) {
     dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
         texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
     SDL_RenderPresent(renderer);
+
+     
 
     SDL_Texture* pacmanDer = IMG_LoadTexture(renderer, "assets/pacman/pacmanDer.png");
     SDL_Texture* pacmanIzq = IMG_LoadTexture(renderer, "assets/pacman/pacmanIzq.png");
