@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 
 #define ANCHO 530
 #define ALTURA 630
@@ -67,6 +68,7 @@ SDL_Texture* pacmanArriba;
 SDL_Texture* pacmanAbajo;
 SDL_Texture* pacmanBocaCerrada;
 SDL_Renderer* renderer;
+Mix_Music* musica;
 SDL_Rect pacmanRect;
 
 
@@ -100,7 +102,7 @@ void cargarTexturas(SDL_Renderer* renderer) {
 void actualizarTexturaPacman() {
 
     if (movimientoX == 0 && movimientoY == 0) {
-        texturaPacmanActual = pacmanDer;  
+        texturaPacmanActual = pacmanBocaCerrada;  
         return;
     }
 
@@ -257,6 +259,8 @@ void inicializarComida() {
 
 
 void subirNivel() {
+
+    Mix_PauseMusic();
     nivel++;
     printf("GANÓ! Nivel %d\n", nivel);     
 
@@ -281,8 +285,16 @@ void subirNivel() {
 }
 
 void moverPacman() {
+
     int nuevaX = pacmanX + movimientoX;
     int nuevaY = pacmanY + movimientoY;
+
+    if ((movimientoX != 0 || movimientoY != 0) && Mix_PausedMusic()) {
+        Mix_PlayMusic(musica, -1);
+    }
+    else if((movimientoX == 0 || movimientoY == 0) && !Mix_PlayingMusic()) {
+        Mix_PauseMusic();
+    }
 
     if (esPosicionValida(nuevaX, pacmanY)) {
         pacmanX = nuevaX;
@@ -293,7 +305,7 @@ void moverPacman() {
     
     int celdaX = pacmanX / CELDA_TAM;
     int celdaY = pacmanY / CELDA_TAM;
-
+    
     
     if (laberinto[celdaY][celdaX] == 0 || laberinto[celdaY][celdaX] == 20) {
         if (laberinto[celdaY][celdaX] == 20) {
@@ -317,8 +329,8 @@ void moverPacman() {
         if (contadorInmunidad <= 0) {
             inmune = false; 
         }
-    }
-    
+    }    
+
 
 }
 
@@ -343,6 +355,19 @@ int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_EVERYTHING); 
 
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("Error al inicializar SDL_mixer: %s\n", Mix_GetError());
+        return 1;
+    }
+
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+
+    musica = Mix_LoadMUS("assets/musica/pacman-waka-waka.mp3");
+
+    if (!musica) {
+        printf("Error al cargar la música: %s\n", Mix_GetError());
+        return 1;
+    }
 
     ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
     renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
@@ -474,7 +499,10 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(texturaComida);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(ventana);
-    
+
+    Mix_FreeMusic(musica);
+    Mix_CloseAudio();
+
     SDL_Quit();
 
     return 0;
