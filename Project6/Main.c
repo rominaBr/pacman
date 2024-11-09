@@ -18,18 +18,15 @@
 #define ALTURA_LABERINTO (N * CELDA_TAM)
 #define DURACION_INMUNIDAD 500 
 
+bool inmune = false;
+int pacmanX, pacmanY, comida, cantComida;
 int offsetX = (ANCHO - ANCHO_LABERINTO) / 2;
 int offsetY = MARGEN_SUPERIOR + (ALTURA - MARGEN_SUPERIOR - ALTURA_LABERINTO) / 2;
 int vidas = 3;
 int puntaje = 0;
-bool inmune = false;
 int contadorInmunidad = 0; 
-int pacmanX;
-int pacmanY;
 int movimientoX = 0;
 int movimientoY = 0;
-int comida;
-int cantComida;
 int nivel = 1;
 int contadorBoca = 0;
 
@@ -67,8 +64,23 @@ SDL_Texture* pacmanIzq;
 SDL_Texture* pacmanArriba;
 SDL_Texture* pacmanAbajo;
 SDL_Texture* pacmanBocaCerrada;
+SDL_Texture* texturaVertical;
+SDL_Texture* texturaVertical7;
+SDL_Texture* texturaVertical8;
+SDL_Texture* texturaHorizontal;
+SDL_Texture* texturaHorizontal9;
+SDL_Texture* texturaHorizontal10;
+SDL_Texture* texturaHorizontal13;
+SDL_Texture* texturaHorizontal14;
+SDL_Texture* texturaEsquina3;
+SDL_Texture* texturaEsquina4;
+SDL_Texture* texturaEsquina5;
+SDL_Texture* texturaEsquina6;
+SDL_Texture* texturaVertical11;
+SDL_Texture* texturaVertical12;
+SDL_Texture* texturaComida;
 SDL_Renderer* renderer;
-Mix_Music* musica;
+Mix_Music* musicaComer;
 SDL_Rect pacmanRect;
 
 
@@ -96,6 +108,30 @@ void cargarTexturas(SDL_Renderer* renderer) {
     }
 
     SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+
+    texturaVertical = crearTextura(renderer, "assets/laberinto/vertical.png");
+    texturaVertical7 = crearTextura(renderer, "assets/laberinto/vertical7.png");
+    texturaVertical8 = crearTextura(renderer, "assets/laberinto/vertical8.png");
+    texturaHorizontal = crearTextura(renderer, "assets/laberinto/horizontal.png");
+    texturaHorizontal9 = crearTextura(renderer, "assets/laberinto/horizontal9.png");
+    texturaHorizontal10 = crearTextura(renderer, "assets/laberinto/horizontal10.png");
+    texturaHorizontal13 = crearTextura(renderer, "assets/laberinto/horizontal13.png");
+    texturaHorizontal14 = crearTextura(renderer, "assets/laberinto/horizontal14.png");
+    texturaEsquina3 = crearTextura(renderer, "assets/laberinto/esquina3.png");
+    texturaEsquina4 = crearTextura(renderer, "assets/laberinto/esquina4.png");
+    texturaEsquina5 = crearTextura(renderer, "assets/laberinto/esquina5.png");
+    texturaEsquina6 = crearTextura(renderer, "assets/laberinto/esquina6.png");
+    texturaVertical11 = crearTextura(renderer, "assets/laberinto/vertical11.png");
+    texturaVertical12 = crearTextura(renderer, "assets/laberinto/vertical12.png");
+    texturaComida = crearTextura(renderer, "assets/otros/comida.png");
+
+    if (!texturaVertical || !texturaHorizontal || !texturaEsquina3 || !texturaEsquina4 || !texturaEsquina5 ||
+        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12 || !texturaHorizontal13 ||
+        !texturaHorizontal14 || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
+        printf("Error al cargar las texturas: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
 
 }
 
@@ -289,11 +325,11 @@ void moverPacman() {
     int nuevaX = pacmanX + movimientoX;
     int nuevaY = pacmanY + movimientoY;
 
-    if ((movimientoX != 0 || movimientoY != 0) && Mix_PausedMusic()) {
-        Mix_PlayMusic(musica, -1);
+    if ((movimientoX != 0 || movimientoY != 0) && Mix_PausedMusic(musicaComer)) {
+        Mix_PlayMusic(musicaComer, -1);
     }
-    else if((movimientoX == 0 || movimientoY == 0) && !Mix_PlayingMusic()) {
-        Mix_PauseMusic();
+    else if((movimientoX == 0 || movimientoY == 0) && !Mix_PlayingMusic(musicaComer)) {
+        Mix_PauseMusic(musicaComer);
     }
 
     if (esPosicionValida(nuevaX, pacmanY)) {
@@ -351,6 +387,33 @@ void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
 
 }
 
+void cerrarSDL() {
+
+    SDL_DestroyTexture(texturaVertical);
+    SDL_DestroyTexture(texturaVertical7);
+    SDL_DestroyTexture(texturaVertical8);
+    SDL_DestroyTexture(texturaHorizontal);
+    SDL_DestroyTexture(texturaHorizontal9);
+    SDL_DestroyTexture(texturaHorizontal10);
+    SDL_DestroyTexture(texturaVertical11);
+    SDL_DestroyTexture(texturaVertical12);
+    SDL_DestroyTexture(texturaHorizontal13);
+    SDL_DestroyTexture(texturaHorizontal14);
+    SDL_DestroyTexture(texturaEsquina3);
+    SDL_DestroyTexture(texturaEsquina4);
+    SDL_DestroyTexture(texturaEsquina5);
+    SDL_DestroyTexture(texturaEsquina6);
+    SDL_DestroyTexture(texturaPacmanActual);
+    SDL_DestroyTexture(texturaComida);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(ventana);
+
+    Mix_FreeMusic(musicaComer);
+    Mix_CloseAudio();
+
+    SDL_Quit();
+}
+
 int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_EVERYTHING); 
@@ -362,9 +425,9 @@ int main(int argc, char* argv[]) {
 
     Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 
-    musica = Mix_LoadMUS("assets/musica/pacman-waka-waka.mp3");
+    musicaComer = Mix_LoadMUS("assets/musica/pacman-waka-waka.mp3");
 
-    if (!musica) {
+    if (!musicaComer) {
         printf("Error al cargar la música: %s\n", Mix_GetError());
         return 1;
     }
@@ -386,7 +449,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;
 
@@ -395,40 +457,16 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-
-    SDL_Texture* texturaVertical = crearTextura(renderer, "assets/laberinto/vertical.png");
-    SDL_Texture* texturaVertical7 = crearTextura(renderer, "assets/laberinto/vertical7.png");
-    SDL_Texture* texturaVertical8 = crearTextura(renderer, "assets/laberinto/vertical8.png");
-    SDL_Texture* texturaHorizontal = crearTextura(renderer, "assets/laberinto/horizontal.png");
-    SDL_Texture* texturaHorizontal9 = crearTextura(renderer, "assets/laberinto/horizontal9.png");
-    SDL_Texture* texturaHorizontal10 = crearTextura(renderer, "assets/laberinto/horizontal10.png");
-    SDL_Texture* texturaHorizontal13 = crearTextura(renderer, "assets/laberinto/horizontal13.png");
-    SDL_Texture* texturaHorizontal14 = crearTextura(renderer, "assets/laberinto/horizontal14.png");
-    SDL_Texture* texturaEsquina3 = crearTextura(renderer, "assets/laberinto/esquina3.png");
-    SDL_Texture* texturaEsquina4 = crearTextura(renderer, "assets/laberinto/esquina4.png");
-    SDL_Texture* texturaEsquina5 = crearTextura(renderer, "assets/laberinto/esquina5.png");
-    SDL_Texture* texturaEsquina6 = crearTextura(renderer, "assets/laberinto/esquina6.png");
-    SDL_Texture* texturaVertical11 = crearTextura(renderer, "assets/laberinto/vertical11.png");
-    SDL_Texture* texturaVertical12 = crearTextura(renderer, "assets/laberinto/vertical12.png");
-    SDL_Texture* texturaComida = crearTextura(renderer, "assets/otros/comida.png");
-
-    if (!texturaVertical || !texturaHorizontal || !texturaEsquina3 || !texturaEsquina4 || !texturaEsquina5 || 
-        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12|| !texturaHorizontal13 ||
-        !texturaHorizontal14 || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
-        printf("Error al cargar las texturas: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-    
-   
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-    SDL_RenderClear(renderer);
-    dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
-        texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
-    SDL_RenderPresent(renderer);
    
     
     cargarTexturas(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
+        texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
+    SDL_RenderPresent(renderer);
 
 
     pacmanRect.w = PACMAN_TAM;
@@ -480,30 +518,8 @@ int main(int argc, char* argv[]) {
         
         SDL_Delay(1000 / 50);
     }
-
-    SDL_DestroyTexture(texturaVertical);
-    SDL_DestroyTexture(texturaVertical7);
-    SDL_DestroyTexture(texturaVertical8);
-    SDL_DestroyTexture(texturaHorizontal);
-    SDL_DestroyTexture(texturaHorizontal9);
-    SDL_DestroyTexture(texturaHorizontal10);
-    SDL_DestroyTexture(texturaVertical11);
-    SDL_DestroyTexture(texturaVertical12);
-    SDL_DestroyTexture(texturaHorizontal13);
-    SDL_DestroyTexture(texturaHorizontal14);
-    SDL_DestroyTexture(texturaEsquina3);
-    SDL_DestroyTexture(texturaEsquina4);
-    SDL_DestroyTexture(texturaEsquina5);
-    SDL_DestroyTexture(texturaEsquina6);
-    SDL_DestroyTexture(texturaPacmanActual);
-    SDL_DestroyTexture(texturaComida);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(ventana);
-
-    Mix_FreeMusic(musica);
-    Mix_CloseAudio();
-
-    SDL_Quit();
+    
+    cerrarSDL();
 
     return 0;
 }
