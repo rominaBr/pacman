@@ -29,6 +29,8 @@ int movimientoX = 0;
 int movimientoY = 0;
 int comida;
 int cantComida;
+int nivel = 1;
+int contadorBoca = 0;
 
 int laberinto[N][M] = {
     {3, 2, 2, 2, 2, 2, 2, 2, 2, 9, 2, 2, 2, 2, 2, 2, 2, 2, 4},
@@ -40,9 +42,9 @@ int laberinto[N][M] = {
     {1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
     {5, 2, 2, 4, 0, 7, 2, 14, 0, 12, 20, 13, 2, 8, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 21, 21, 21},
-    {2, 2, 2, 6, 0, 12, 0, 3, 2, -1, 2, 4, 0, 12, 0, 5, 2, 2, 2},
-    {0, 0, 0, 0, 0, 0, 0, 1, 21, 21, 21, 1, 0, 0, 0, 0, 0, 0, 0},
-    {2, 2, 2, 4, 0, 11, 0, 1, 21, 21, 21, 1, 0, 11, 0, 3, 2, 2, 2},
+    {3, 2, 2, 6, 0, 12, 0, 3, 2, -2, 2, 4, 0, 12, 0, 5, 2, 2, 4},
+    {1, 0, 0, 0, 0, 0, 0, 1, 21, 21, 21, 1, 0, 0, 0, 0, 0, 0, 1},
+    {5, 2, 2, 4, 0, 11, 0, 1, 21, 21, 21, 1, 0, 11, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 5, 2, 2, 2, 6, 0, 1, 0, 1, 21, 21, 21},
     {21, 21, 21, 1, 0, 1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 1, 21, 21, 21},
     {3, 2, 2, 6, 0, 12, 0, 13, 2, 9, 2, 14, 0, 12, 0, 5, 2, 2, 4},
@@ -55,6 +57,77 @@ int laberinto[N][M] = {
     {1, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 1},  
     {5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6}
 };
+
+
+SDL_Window* ventana;
+SDL_Texture* texturaPacmanActual;
+SDL_Texture* pacmanDer;
+SDL_Texture* pacmanIzq;
+SDL_Texture* pacmanArriba;
+SDL_Texture* pacmanAbajo;
+SDL_Texture* pacmanBocaCerrada;
+SDL_Renderer* renderer;
+SDL_Rect pacmanRect;
+
+
+SDL_Texture* crearTextura(SDL_Renderer* renderer, const char* path) {
+    SDL_Surface* tempSurface = IMG_Load(path);
+    SDL_Texture* textura = SDL_CreateTextureFromSurface(renderer, tempSurface);
+    SDL_FreeSurface(tempSurface);
+    return textura;
+}
+
+void cargarTexturas(SDL_Renderer* renderer) {
+
+    pacmanDer = crearTextura(renderer, "assets/pacman/pacmanDer.png");
+    pacmanIzq = crearTextura(renderer, "assets/pacman/pacmanIzq.png");
+    pacmanArriba = crearTextura(renderer, "assets/pacman/pacmanArriba.png");
+    pacmanAbajo = crearTextura(renderer, "assets/pacman/pacmanAbajo.png");
+    pacmanBocaCerrada = crearTextura(renderer, "assets/pacman/pacmanBocaCerrada.png");
+
+    texturaPacmanActual = pacmanDer;
+
+    if (!texturaPacmanActual) {
+        printf("Error al cargar la textura: %s \n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+
+}
+
+void actualizarTexturaPacman() {
+
+    if (movimientoX == 0 && movimientoY == 0) {
+        texturaPacmanActual = pacmanDer;  
+        return;
+    }
+
+    SDL_Texture* texturaAbierta = pacmanDer;
+    SDL_Texture* texturaCerrada = pacmanBocaCerrada;
+
+    if (movimientoX > 0) {
+        texturaAbierta = pacmanDer;
+        texturaCerrada = pacmanBocaCerrada;
+    }
+    else if (movimientoX < 0) {
+        texturaAbierta = pacmanIzq;
+        texturaCerrada = pacmanBocaCerrada;
+    }
+    else if (movimientoY < 0) {
+        texturaAbierta = pacmanArriba;
+        texturaCerrada = pacmanBocaCerrada;
+    }
+    else if (movimientoY > 0) {
+        texturaAbierta = pacmanAbajo;
+        texturaCerrada = pacmanBocaCerrada;
+    }
+
+    texturaPacmanActual = (contadorBoca / 5) % 2 == 0 ? texturaAbierta : texturaCerrada;
+    contadorBoca++;
+
+}
 
 
 void dibujarLaberinto(SDL_Renderer* renderer, SDL_Texture* texturaVertical, SDL_Texture* texturaVertical7, SDL_Texture* texturaVertical8, 
@@ -123,12 +196,7 @@ void dibujarLaberinto(SDL_Renderer* renderer, SDL_Texture* texturaVertical, SDL_
     }
 }
 
-SDL_Texture* crearTextura(SDL_Renderer* renderer, const char* path) {
-    SDL_Surface* tempSurface = IMG_Load(path);
-    SDL_Texture* textura = SDL_CreateTextureFromSurface(renderer, tempSurface);
-    SDL_FreeSurface(tempSurface);
-    return textura;
-}
+
 
 void moverSegunTecla(SDL_Event evento) {
 
@@ -167,6 +235,17 @@ bool esPosicionValida(int x, int y) {
 
 void inicializarComida() {
     cantComida = 0;
+
+    if (nivel > 1) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < M; j++) {
+                if (laberinto[i][j] == -1) {
+                    laberinto[i][j] = 0;
+                }
+            }
+        }
+    }
+
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
             if (laberinto[i][j] == 0 || laberinto[i][j] == 20) {
@@ -176,8 +255,29 @@ void inicializarComida() {
     }
 }
 
-void pasarTunel(){
-    printf("pasó");
+
+void subirNivel() {
+    nivel++;
+    printf("GANÓ! Nivel %d\n", nivel);     
+
+    texturaPacmanActual = pacmanDer;
+    
+    movimientoX = 0;
+    movimientoY = 0;
+    
+    SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+    SDL_RenderPresent(renderer);
+
+    SDL_Delay(1000);
+
+    inicializarComida();
+
+    pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
+    pacmanY = 363 - offsetY;      
+
+    inmune = false;
+    contadorInmunidad = 0;
+
 }
 
 void moverPacman() {
@@ -194,9 +294,6 @@ void moverPacman() {
     int celdaX = pacmanX / CELDA_TAM;
     int celdaY = pacmanY / CELDA_TAM;
 
-    if (celdaX == 0) {
-        pasarTunel();
-    }
     
     if (laberinto[celdaY][celdaX] == 0 || laberinto[celdaY][celdaX] == 20) {
         if (laberinto[celdaY][celdaX] == 20) {
@@ -207,10 +304,11 @@ void moverPacman() {
 
         puntaje += (laberinto[celdaY][celdaX] == 20) ? 50 : 10; 
         laberinto[celdaY][celdaX] = -1; 
-        cantComida--;
+        cantComida--;        
+        
 
-        if (cantComida == 0) {
-            printf("GANÓ!");
+        if (cantComida == 160) {
+            subirNivel();
         }
     }
     
@@ -241,16 +339,14 @@ void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
 
 }
 
-
-
 int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_EVERYTHING); 
 
 
-    SDL_Window* ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
-    SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
-
+    ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
+    renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
+    
     if (TTF_Init() == -1) {
         printf("Error al inicializar SDL_ttf: %s\n", TTF_GetError());
         SDL_Quit();
@@ -289,11 +385,11 @@ int main(int argc, char* argv[]) {
     SDL_Texture* texturaEsquina6 = crearTextura(renderer, "assets/laberinto/esquina6.png");
     SDL_Texture* texturaVertical11 = crearTextura(renderer, "assets/laberinto/vertical11.png");
     SDL_Texture* texturaVertical12 = crearTextura(renderer, "assets/laberinto/vertical12.png");
-    SDL_Texture* texturaComida = crearTextura(renderer, "assets/pacman/comida.png");
+    SDL_Texture* texturaComida = crearTextura(renderer, "assets/otros/comida.png");
 
     if (!texturaVertical || !texturaHorizontal || !texturaEsquina3 || !texturaEsquina4 || !texturaEsquina5 || 
-        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12|| !texturaHorizontal13 || !texturaHorizontal14
-        || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
+        !texturaEsquina6 || !texturaHorizontal9 || !texturaHorizontal10 || !texturaVertical11 || !texturaVertical12|| !texturaHorizontal13 ||
+        !texturaHorizontal14 || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
         printf("Error al cargar las texturas: %s\n", SDL_GetError());
         SDL_Quit();
         return 1;
@@ -305,25 +401,10 @@ int main(int argc, char* argv[]) {
     dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
         texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
     SDL_RenderPresent(renderer);
-
-    SDL_Texture* pacmanDer = IMG_LoadTexture(renderer, "assets/pacman/pacmanDer.png");
-    SDL_Texture* pacmanIzq = IMG_LoadTexture(renderer, "assets/pacman/pacmanIzq.png");
-    SDL_Texture* pacmanArriba = IMG_LoadTexture(renderer, "assets/pacman/pacmanArriba.png");
-    SDL_Texture* pacmanAbajo = IMG_LoadTexture(renderer, "assets/pacman/pacmanAbajo.png");
-
-    SDL_Texture* texturaPacmanActual = pacmanDer;
    
+    
+    cargarTexturas(renderer);
 
-
-    if (!texturaPacmanActual) {
-        printf("Error al cargar la textura: %s \n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }    
-
-    SDL_Rect pacmanRect;
-
-    SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
 
     pacmanRect.w = PACMAN_TAM;
     pacmanRect.h = PACMAN_TAM;
@@ -349,11 +430,8 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (movimientoX > 0) texturaPacmanActual = pacmanDer;
-        else if (movimientoX < 0) texturaPacmanActual = pacmanIzq;
-        else if (movimientoY < 0) texturaPacmanActual = pacmanArriba;
-        else if (movimientoY > 0) texturaPacmanActual = pacmanAbajo;
 
+        actualizarTexturaPacman();
         moverPacman();
 
         pacmanRect.w = PACMAN_TAM;
