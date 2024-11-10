@@ -40,7 +40,7 @@ int laberinto[N][M] = {
     {1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
     {5, 2, 2, 4, 0, 7, 2, 14, 0, 12, 20, 13, 2, 8, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 21, 21, 21},
-    {3, 2, 2, 6, 0, 12, 0, 3, 2, -2, 2, 4, 0, 12, 0, 5, 2, 2, 4},
+    {3, 2, 2, 6, 0, 12, 0, 3, 2, -3, 2, 4, 0, 12, 0, 5, 2, 2, 4},
     {1, 0, 0, 0, 0, 0, 0, 1, 21, 21, 21, 1, 0, 0, 0, 0, 0, 0, 1},
     {5, 2, 2, 4, 0, 11, 0, 1, 21, 21, 21, 1, 0, 11, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 5, 2, 2, 2, 6, 0, 1, 0, 1, 21, 21, 21},
@@ -80,7 +80,8 @@ SDL_Texture* texturaVertical11;
 SDL_Texture* texturaVertical12;
 SDL_Texture* texturaComida;
 SDL_Renderer* renderer;
-Mix_Music* musicaComer;
+Mix_Chunk* musicaComer;
+Mix_Chunk* musicaPrincipal;
 SDL_Rect pacmanRect;
 
 
@@ -265,10 +266,10 @@ bool esPosicionValida(int x, int y) {
     int celX2 = (x + PACMAN_TAM - 1) / CELDA_TAM;
     int celY2 = (y + PACMAN_TAM - 1) / CELDA_TAM;
 
-    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1) &&
-        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1) &&
-        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1) &&
-        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1));
+    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2) &&
+        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1 || laberinto[celY1][celX2] == -2) &&
+        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1 || laberinto[celY2][celX1] == -2) &&
+        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1 || laberinto[celY2][celX2] == -2));
 }
 
 void inicializarComida() {
@@ -279,6 +280,9 @@ void inicializarComida() {
             for (int j = 0; j < M; j++) {
                 if (laberinto[i][j] == -1) {
                     laberinto[i][j] = 0;
+                }
+                else if (laberinto[i][j] == -2) {
+                    laberinto[i][j] = 20;
                 }
             }
         }
@@ -296,7 +300,6 @@ void inicializarComida() {
 
 void subirNivel() {
 
-    Mix_PauseMusic();
     nivel++;
     printf("GANÓ! Nivel %d\n", nivel);     
 
@@ -317,6 +320,10 @@ void subirNivel() {
 
     inmune = false;
     contadorInmunidad = 0;
+    
+    if (!Mix_PlayingMusic()) {
+        Mix_PlayMusic(musicaPrincipal, -1);
+    }
 
 }
 
@@ -324,13 +331,6 @@ void moverPacman() {
 
     int nuevaX = pacmanX + movimientoX;
     int nuevaY = pacmanY + movimientoY;
-
-    if ((movimientoX != 0 || movimientoY != 0) && Mix_PausedMusic(musicaComer)) {
-        Mix_PlayMusic(musicaComer, -1);
-    }
-    else if((movimientoX == 0 || movimientoY == 0) && !Mix_PlayingMusic(musicaComer)) {
-        Mix_PauseMusic(musicaComer);
-    }
 
     if (esPosicionValida(nuevaX, pacmanY)) {
         pacmanX = nuevaX;
@@ -344,14 +344,22 @@ void moverPacman() {
     
     
     if (laberinto[celdaY][celdaX] == 0 || laberinto[celdaY][celdaX] == 20) {
+
+        Mix_PlayChannel(1, musicaComer, 0);
+
+
         if (laberinto[celdaY][celdaX] == 20) {
             inmune = true;
             printf("inmunidad!\n");
             contadorInmunidad = DURACION_INMUNIDAD; 
+            laberinto[celdaY][celdaX] = -2;
+            puntaje += 50;
+        }
+        else {
+            laberinto[celdaY][celdaX] = -1;
+            puntaje += 10;
         }
 
-        puntaje += (laberinto[celdaY][celdaX] == 20) ? 50 : 10; 
-        laberinto[celdaY][celdaX] = -1; 
         cantComida--;        
         
 
@@ -359,6 +367,7 @@ void moverPacman() {
             subirNivel();
         }
     }
+
     
     if (inmune) {
         contadorInmunidad--;
@@ -366,7 +375,6 @@ void moverPacman() {
             inmune = false; 
         }
     }    
-
 
 }
 
@@ -408,7 +416,8 @@ void cerrarSDL() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(ventana);
 
-    Mix_FreeMusic(musicaComer);
+    Mix_FreeChunk(musicaComer);
+    Mix_FreeMusic(musicaPrincipal);
     Mix_CloseAudio();
 
     SDL_Quit();
@@ -419,21 +428,43 @@ int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_EVERYTHING); 
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("Error al inicializar SDL_mixer: %s\n", Mix_GetError());
+        printf("Error de audio: %s\n", Mix_GetError());
         return 1;
     }
 
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+    Mix_VolumeMusic(MIX_MAX_VOLUME * 0.8);
+    Mix_VolumeChunk(musicaComer, MIX_MAX_VOLUME * 0.3);
 
-    musicaComer = Mix_LoadMUS("assets/musica/pacman-waka-waka.mp3");
 
-    if (!musicaComer) {
+    musicaComer = Mix_LoadWAV("assets/musica/pacman-waka.wav");
+    musicaPrincipal = Mix_LoadMUS("assets/musica/pacman-siren.mp3");
+
+    if (!musicaComer || !musicaPrincipal) {
         printf("Error al cargar la música: %s\n", Mix_GetError());
         return 1;
-    }
+    }  
+
 
     ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
     renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
+
+    if (!ventana || !renderer) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    Mix_HaltMusic();
+    Mix_PlayMusic(musicaPrincipal, -1);
+
+    if (musicaPrincipal) {
+        printf("Reproduciendo la música principal...\n");
+        Mix_PlayMusic(musicaPrincipal, -1);
+    }
+    else {
+        printf("Error: La música principal no se cargó correctamente.\n");
+    }
+
     
     if (TTF_Init() == -1) {
         printf("Error al inicializar SDL_ttf: %s\n", TTF_GetError());
@@ -451,13 +482,6 @@ int main(int argc, char* argv[]) {
 
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;
-
-    if (!ventana || !renderer) {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-   
     
     cargarTexturas(renderer);
 
