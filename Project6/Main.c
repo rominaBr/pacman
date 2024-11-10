@@ -16,15 +16,22 @@
 #define MARGEN_SUPERIOR 20
 #define ANCHO_LABERINTO (M * CELDA_TAM)
 #define ALTURA_LABERINTO (N * CELDA_TAM)
-#define DURACION_INMUNIDAD 500 
+#define DURACION_POWERUP 500 
 
-bool inmune = false;
+typedef struct {
+    int x, y;               // Posición en el laberinto
+    int dx, dy;             // Dirección de movimiento
+    bool vivo;  
+    SDL_Texture* textura; 
+} Fantasma;
+
+bool powerUp = false;
 int pacmanX, pacmanY, comida, cantComida;
 int offsetX = (ANCHO - ANCHO_LABERINTO) / 2;
 int offsetY = MARGEN_SUPERIOR + (ALTURA - MARGEN_SUPERIOR - ALTURA_LABERINTO) / 2;
 int vidas = 3;
 int puntaje = 0;
-int contadorInmunidad = 0; 
+int contadorPowerUp = 0; 
 int movimientoX = 0;
 int movimientoY = 0;
 int nivel = 1;
@@ -41,10 +48,10 @@ int laberinto[N][M] = {
     {5, 2, 2, 4, 0, 7, 2, 14, 0, 12, 20, 13, 2, 8, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 21, 21, 21},
     {3, 2, 2, 6, 0, 12, 0, 3, 2, -3, 2, 4, 0, 12, 0, 5, 2, 2, 4},
-    {1, 0, 0, 0, 0, 0, 0, 1, 21, 21, 21, 1, 0, 0, 0, 0, 0, 0, 1},
-    {5, 2, 2, 4, 0, 11, 0, 1, 21, 21, 21, 1, 0, 11, 0, 3, 2, 2, 6},
+    {1, 0, 0, 0, 0, 0, 0, 1, 25, 25, 25, 1, 0, 0, 0, 0, 0, 0, 1},
+    {5, 2, 2, 4, 0, 11, 0, 1, 22, 23, 24, 1, 0, 11, 0, 3, 2, 2, 6},
     {21, 21, 21, 1, 0, 1, 0, 5, 2, 2, 2, 6, 0, 1, 0, 1, 21, 21, 21},
-    {21, 21, 21, 1, 0, 1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 1, 21, 21, 21},
+    {21, 21, 21, 1, 0, 1, 0, 0, 0, -4, 0, 0, 0, 1, 0, 1, 21, 21, 21},
     {3, 2, 2, 6, 0, 12, 0, 13, 2, 9, 2, 14, 0, 12, 0, 5, 2, 2, 4},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 13, 4, 0, 13, 2, 14, 0, 12, 0, 13, 2, 14, 0, 3, 14, 0, 1},
@@ -79,10 +86,16 @@ SDL_Texture* texturaEsquina6;
 SDL_Texture* texturaVertical11;
 SDL_Texture* texturaVertical12;
 SDL_Texture* texturaComida;
+SDL_Texture* texturaAmarillo;
+SDL_Texture* texturaRosa;
+SDL_Texture* texturaCeleste;
+SDL_Texture* texturaRoja;
 SDL_Renderer* renderer;
 Mix_Chunk* musicaComer;
 Mix_Chunk* musicaPrincipal;
+Mix_Chunk* musicaPowerUp;
 SDL_Rect pacmanRect;
+Fantasma fantasmaRojo, fantasmaRosa, fantasmaCeleste, fantasmaAmarillo;
 
 
 SDL_Texture* crearTextura(SDL_Renderer* renderer, const char* path) {
@@ -133,6 +146,11 @@ void cargarTexturas(SDL_Renderer* renderer) {
         SDL_Quit();
         return 1;
     }
+
+    texturaAmarillo = crearTextura(renderer, "assets/fantasmas/fantasma-amarillo.png");
+    texturaCeleste = crearTextura(renderer, "assets/fantasmas/fantasma-celeste.png");
+    texturaRoja = crearTextura(renderer, "assets/fantasmas/fantasma-rojo.png");
+    texturaRosa = crearTextura(renderer, "assets/fantasmas/fantasma-rosa.png");
 
 }
 
@@ -266,10 +284,10 @@ bool esPosicionValida(int x, int y) {
     int celX2 = (x + PACMAN_TAM - 1) / CELDA_TAM;
     int celY2 = (y + PACMAN_TAM - 1) / CELDA_TAM;
 
-    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2) &&
-        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1 || laberinto[celY1][celX2] == -2) &&
-        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1 || laberinto[celY2][celX1] == -2) &&
-        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1 || laberinto[celY2][celX2] == -2));
+    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2 || laberinto[celY1][celX1] == -4) &&
+        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1 || laberinto[celY1][celX2] == -2 || laberinto[celY1][celX2] == -4) &&
+        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1 || laberinto[celY2][celX1] == -2 || laberinto[celY2][celX1] == -4) &&
+        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1 || laberinto[celY2][celX2] == -2 || laberinto[celY2][celX2] == -4));
 }
 
 void inicializarComida() {
@@ -297,8 +315,58 @@ void inicializarComida() {
     }
 }
 
+void inicializarFantasma(Fantasma* fantasma, int x, int y, SDL_Texture* textura) {
+    fantasma->x = x;
+    fantasma->y = y;
+    fantasma->dx = 0;
+    fantasma->dy = 0;
+    fantasma->vivo = true;
+    fantasma->textura = textura;
+}
+
+void crearFantasmas() {
+    for (int i = 1; i < N; i++) {
+        for (int j = 1; j < M; j++) {
+            int x = j * CELDA_TAM + offsetX;
+            int y = i * CELDA_TAM + offsetY;
+            switch (laberinto[i][j]) {
+            case 22: inicializarFantasma(&fantasmaAmarillo, x, y, texturaAmarillo);
+                break;
+            case 23: inicializarFantasma(&fantasmaCeleste, x, y, texturaCeleste);
+                break;
+            case 24: inicializarFantasma(&fantasmaRosa, x, y, texturaRosa);
+                break;
+            }
+        }
+    }
+}
+
+void moverFantasma(Fantasma* fantasma) {
+    int nuevaX = fantasma->x + fantasma->dx;
+    int nuevaY = fantasma->y + fantasma->dy;
+
+    if (esPosicionValida(nuevaX, nuevaY)) {
+        fantasma->x = nuevaX;
+        fantasma->y = nuevaY;
+    }
+    else {
+        // Cambiar dirección de manera aleatoria o con lógica específica
+        fantasma->dx = -fantasma->dx;
+        fantasma->dy = -fantasma->dy;
+    }
+}
+
+void dibujarFantasma(SDL_Renderer* renderer, Fantasma* fantasma) {
+    SDL_Rect rect = { fantasma->x, fantasma->y, CELDA_TAM, CELDA_TAM };
+    SDL_RenderCopy(renderer, fantasma->textura, NULL, &rect);
+}
+
+bool colisionPacmanFantasma(Fantasma* fantasma) {
+    return pacmanX == fantasma->x && pacmanY == fantasma->y;
+}
 
 void subirNivel() {
+
 
     nivel++;
     printf("GANÓ! Nivel %d\n", nivel);     
@@ -318,9 +386,11 @@ void subirNivel() {
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;      
 
-    inmune = false;
-    contadorInmunidad = 0;
+    powerUp = false;
+    contadorPowerUp = 0;
     
+    Mix_HaltMusic();
+
     if (!Mix_PlayingMusic()) {
         Mix_PlayMusic(musicaPrincipal, -1);
     }
@@ -347,11 +417,21 @@ void moverPacman() {
 
         Mix_PlayChannel(1, musicaComer, 0);
 
-
         if (laberinto[celdaY][celdaX] == 20) {
-            inmune = true;
-            printf("inmunidad!\n");
-            contadorInmunidad = DURACION_INMUNIDAD; 
+            Mix_HaltMusic();
+            Mix_PlayMusic(musicaPowerUp, -1);
+
+            if (musicaPowerUp) {
+                printf("Reproduciendo la música Power Up...\n");
+                Mix_PlayMusic(musicaPowerUp, -1);
+            }
+            else {
+                printf("Error: La música de Power Up no se cargó correctamente.\n");
+            }
+
+            powerUp = true;
+            printf("Power Up\n");
+            contadorPowerUp = DURACION_POWERUP; 
             laberinto[celdaY][celdaX] = -2;
             puntaje += 50;
         }
@@ -360,19 +440,20 @@ void moverPacman() {
             puntaje += 10;
         }
 
-        cantComida--;        
-        
+        cantComida--;    
 
         if (cantComida == 160) {
             subirNivel();
         }
     }
-
     
-    if (inmune) {
-        contadorInmunidad--;
-        if (contadorInmunidad <= 0) {
-            inmune = false; 
+    if (powerUp) {
+        contadorPowerUp--;
+        if (contadorPowerUp <= 0) {
+            powerUp = false; 
+            printf("Terminó power up\n");
+            Mix_HaltMusic();
+            Mix_PlayMusic(musicaPrincipal, -1);
         }
     }    
 
@@ -417,10 +498,12 @@ void cerrarSDL() {
     SDL_DestroyWindow(ventana);
 
     Mix_FreeChunk(musicaComer);
+    Mix_FreeMusic(musicaPowerUp);
     Mix_FreeMusic(musicaPrincipal);
     Mix_CloseAudio();
 
     SDL_Quit();
+
 }
 
 int main(int argc, char* argv[]) {
@@ -436,14 +519,14 @@ int main(int argc, char* argv[]) {
     Mix_VolumeChunk(musicaComer, MIX_MAX_VOLUME * 0.3);
 
 
-    musicaComer = Mix_LoadWAV("assets/musica/pacman-waka.wav");
+    musicaComer = Mix_LoadWAV("assets/musica/pacman-waka-waka.wav");
     musicaPrincipal = Mix_LoadMUS("assets/musica/pacman-siren.mp3");
+    musicaPowerUp = Mix_LoadMUS("assets/musica/pacman-powerup3.mp3");
 
-    if (!musicaComer || !musicaPrincipal) {
+    if (!musicaComer || !musicaPrincipal || !musicaPowerUp) {
         printf("Error al cargar la música: %s\n", Mix_GetError());
         return 1;
     }  
-
 
     ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
     renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
@@ -492,6 +575,8 @@ int main(int argc, char* argv[]) {
         texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
     SDL_RenderPresent(renderer);
 
+    crearFantasmas();
+    dibujarFantasma(renderer, &fantasmaAmarillo);
 
     pacmanRect.w = PACMAN_TAM;
     pacmanRect.h = PACMAN_TAM;
@@ -535,6 +620,10 @@ int main(int argc, char* argv[]) {
             texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12,
             texturaHorizontal13, texturaHorizontal14, texturaComida);
         SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+        
+        dibujarFantasma(renderer, &fantasmaAmarillo);
+        dibujarFantasma(renderer, &fantasmaCeleste);
+        dibujarFantasma(renderer, &fantasmaRosa);
         
         mostrarPuntaje(renderer, font, puntaje);
 
