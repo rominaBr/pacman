@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
+#include <SDL_image.h>
 
 #define ANCHO 530
 #define ALTURA 630
@@ -23,6 +24,8 @@ typedef struct {
     int dx, dy;             // Dirección de movimiento
     bool vivo;  
     SDL_Texture* textura; 
+    int floatOffset; 
+    int floatDirection;
 } Fantasma;
 
 bool powerUp = false;
@@ -36,6 +39,7 @@ int movimientoX = 0;
 int movimientoY = 0;
 int nivel = 1;
 int contadorBoca = 0;
+int contadorFantasma = 0;
 
 int laberinto[N][M] = {
     {3, 2, 2, 2, 2, 2, 2, 2, 2, 9, 2, 2, 2, 2, 2, 2, 2, 2, 4},
@@ -92,8 +96,10 @@ SDL_Texture* texturaCeleste;
 SDL_Texture* texturaRoja;
 SDL_Renderer* renderer;
 Mix_Chunk* musicaComer;
-Mix_Chunk* musicaPrincipal;
-Mix_Chunk* musicaPowerUp;
+Mix_Music* musicaInicio;
+Mix_Music* musicaPrincipal;
+Mix_Music* musicaPowerUp;
+Mix_Music* musicaMuerte;
 SDL_Rect pacmanRect;
 Fantasma fantasmaRojo, fantasmaRosa, fantasmaCeleste, fantasmaAmarillo;
 
@@ -118,7 +124,7 @@ void cargarTexturas(SDL_Renderer* renderer) {
     if (!texturaPacmanActual) {
         printf("Error al cargar la textura: %s \n", SDL_GetError());
         SDL_Quit();
-        return 1;
+        return;
     }
 
     SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
@@ -144,13 +150,19 @@ void cargarTexturas(SDL_Renderer* renderer) {
         !texturaHorizontal14 || !texturaVertical7 || !texturaVertical8 || !texturaComida) {
         printf("Error al cargar las texturas: %s\n", SDL_GetError());
         SDL_Quit();
-        return 1;
+        return;
     }
 
     texturaAmarillo = crearTextura(renderer, "assets/fantasmas/fantasma-amarillo.png");
     texturaCeleste = crearTextura(renderer, "assets/fantasmas/fantasma-celeste.png");
     texturaRoja = crearTextura(renderer, "assets/fantasmas/fantasma-rojo.png");
     texturaRosa = crearTextura(renderer, "assets/fantasmas/fantasma-rosa.png");
+
+    if (!texturaAmarillo || !texturaCeleste || !texturaRosa || !texturaRoja) {
+        printf("Error al cargar las texturas: %s\n", SDL_GetError());
+        SDL_Quit();
+        return;
+    }
 
 }
 
@@ -284,10 +296,10 @@ bool esPosicionValida(int x, int y) {
     int celX2 = (x + PACMAN_TAM - 1) / CELDA_TAM;
     int celY2 = (y + PACMAN_TAM - 1) / CELDA_TAM;
 
-    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2 || laberinto[celY1][celX1] == -4) &&
-        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1 || laberinto[celY1][celX2] == -2 || laberinto[celY1][celX2] == -4) &&
-        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1 || laberinto[celY2][celX1] == -2 || laberinto[celY2][celX1] == -4) &&
-        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1 || laberinto[celY2][celX2] == -2 || laberinto[celY2][celX2] == -4));
+    return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2 || laberinto[celY1][celX1] == -4 || laberinto[celY1][celX1] == 25) &&
+        (laberinto[celY1][celX2] == 0 || laberinto[celY1][celX2] == 20 || laberinto[celY1][celX2] == -1 || laberinto[celY1][celX2] == -2 || laberinto[celY1][celX2] == -4 || laberinto[celY1][celX2] == 25) &&
+        (laberinto[celY2][celX1] == 0 || laberinto[celY2][celX1] == 20 || laberinto[celY2][celX1] == -1 || laberinto[celY2][celX1] == -2 || laberinto[celY2][celX1] == -4 || laberinto[celY2][celX1] == 25) &&
+        (laberinto[celY2][celX2] == 0 || laberinto[celY2][celX2] == 20 || laberinto[celY2][celX2] == -1 || laberinto[celY2][celX2] == -2 || laberinto[celY2][celX2] == -4 || laberinto[celY2][celX2] == 25));
 }
 
 void inicializarComida() {
@@ -313,6 +325,8 @@ void inicializarComida() {
             }
         }
     }
+    
+    //printf("Cantidad de comida: %d\n", cantComida);
 }
 
 void inicializarFantasma(Fantasma* fantasma, int x, int y, SDL_Texture* textura) {
@@ -322,6 +336,8 @@ void inicializarFantasma(Fantasma* fantasma, int x, int y, SDL_Texture* textura)
     fantasma->dy = 0;
     fantasma->vivo = true;
     fantasma->textura = textura;
+    fantasma->floatOffset = 0;
+    fantasma->floatDirection = 1;
 }
 
 void crearFantasmas() {
@@ -330,13 +346,17 @@ void crearFantasmas() {
             int x = j * CELDA_TAM + offsetX;
             int y = i * CELDA_TAM + offsetY;
             switch (laberinto[i][j]) {
-            case 22: inicializarFantasma(&fantasmaAmarillo, x, y, texturaAmarillo);
+            case 22: inicializarFantasma(&fantasmaAmarillo, x, y, texturaAmarillo);   
+                //printf("%d %d\n", x, y);
                 break;
-            case 23: inicializarFantasma(&fantasmaCeleste, x, y, texturaCeleste);
+            case 23: inicializarFantasma(&fantasmaCeleste, x, y, texturaCeleste); 
+                printf("%d %d\n", x, y);
                 break;
             case 24: inicializarFantasma(&fantasmaRosa, x, y, texturaRosa);
+                //printf("%d %d\n", x, y);
                 break;
             case 25: inicializarFantasma(&fantasmaRojo, x, y, texturaRoja);
+                //printf("%d %d\n", x, y);
                 break;
             }
 
@@ -344,9 +364,26 @@ void crearFantasmas() {
     }
 }
 
+
+
 void moverFantasma(Fantasma* fantasma) {
+
+    static int contadorFlotacion = 0;
+
+    if (contadorFlotacion++ % 20 == 0) {  // Ajusta el valor según la lentitud deseada
+        fantasma->floatOffset += fantasma->floatDirection;
+    }
+
     int nuevaX = fantasma->x + fantasma->dx;
     int nuevaY = fantasma->y + fantasma->dy;
+
+    fantasma->floatOffset += fantasma->floatDirection;
+
+    if (fantasma->floatOffset >= 5 || fantasma->floatOffset <= -5) {  // Ajusta el límite según el efecto deseado
+        fantasma->floatDirection = -fantasma->floatDirection;  // Invierte la dirección
+    }
+
+    fantasma->y += fantasma->floatDirection;
 
     if (esPosicionValida(nuevaX, nuevaY)) {
         fantasma->x = nuevaX;
@@ -362,14 +399,114 @@ void moverFantasma(Fantasma* fantasma) {
 void dibujarFantasma(SDL_Renderer* renderer, Fantasma* fantasma) {
     SDL_Rect rect = { fantasma->x, fantasma->y, CELDA_TAM, CELDA_TAM };
     SDL_RenderCopy(renderer, fantasma->textura, NULL, &rect);
+
 }
 
-bool colisionPacmanFantasma(Fantasma* fantasma) {
-    return pacmanX == fantasma->x && pacmanY == fantasma->y;
+
+void reiniciarPosiciones() {
+
+    SDL_Delay(1000);
+    pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
+    pacmanY = 363 - offsetY;
+    movimientoX = 0;
+    movimientoY = 0;
+
+    Mix_PlayMusic(musicaPrincipal, -1);
+
+    inicializarFantasma(&fantasmaRojo, 252, 237, texturaRoja);
+    inicializarFantasma(&fantasmaRosa, 277, 312, texturaRosa);
+    inicializarFantasma(&fantasmaCeleste, 252, 312, texturaCeleste);
+    inicializarFantasma(&fantasmaAmarillo, 227, 312, texturaAmarillo);
+
+ 
+    SDL_RenderClear(renderer);
+    dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8,
+        texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
+        texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11,
+        texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
+
+    dibujarFantasma(renderer, &fantasmaRojo);
+    dibujarFantasma(renderer, &fantasmaRosa);
+    dibujarFantasma(renderer, &fantasmaCeleste);
+    dibujarFantasma(renderer, &fantasmaAmarillo);
+    
+    SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+    SDL_RenderPresent(renderer);
+
+}
+
+
+void animarMuertePacman() {
+    int duracionMusica = 2000;
+    int nroSprites = 6;
+    int tiempoPorSprite = duracionMusica / nroSprites;
+
+    SDL_Texture* spritesMuerte[6];
+    spritesMuerte[0] = crearTextura(renderer, "assets/pacman/pacmanBocaCerrada.png");
+    spritesMuerte[1] = crearTextura(renderer, "assets/pacman/pacmanBocaArriba.png");
+    spritesMuerte[2] = crearTextura(renderer, "assets/pacman/pacmanMuerte3.png");
+    spritesMuerte[3] = crearTextura(renderer, "assets/pacman/pacmanMuerte4.png");
+    spritesMuerte[4] = crearTextura(renderer, "assets/pacman/pacmanMuerte5.png");
+    spritesMuerte[5] = crearTextura(renderer, "assets/pacman/pacmanMuerte6.png");
+
+    Mix_PlayMusic(musicaMuerte, 1);
+
+
+    for (int i = 0; i < nroSprites; i++) {
+        SDL_RenderClear(renderer);
+
+        dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8,
+            texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
+            texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11,
+            texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
+
+
+        dibujarFantasma(renderer, &fantasmaAmarillo);
+        dibujarFantasma(renderer, &fantasmaCeleste);
+        dibujarFantasma(renderer, &fantasmaRosa);
+        dibujarFantasma(renderer, &fantasmaRojo);
+
+        SDL_RenderCopy(renderer, spritesMuerte[i], NULL, &pacmanRect);
+        SDL_RenderPresent(renderer);
+
+        SDL_Delay(tiempoPorSprite);
+    }
+
+}
+
+bool detectarColision(int xFantasma, int yFantasma) {
+
+    int margen = 11;
+    SDL_Rect pacmanRect = { pacmanX + offsetX + margen, pacmanY + offsetY, PACMAN_TAM - margen * 2, PACMAN_TAM };
+    SDL_Rect fantasmaRect = { xFantasma, yFantasma, CELDA_TAM, CELDA_TAM };
+
+    return SDL_HasIntersection(&pacmanRect, &fantasmaRect);
+
+}
+
+void manejarColisiones(Fantasma* fantasma) {
+    if (detectarColision(fantasma->x, fantasma->y)) {
+        if (powerUp) {
+            fantasma->vivo = false;
+            printf("Muere fantasma.\n");
+        }
+        else {
+
+            printf("Muere pacman.\n");
+            animarMuertePacman();
+            vidas--;  
+
+            if (vidas > 0) {
+                reiniciarPosiciones();
+            }
+            else {
+                printf("Perdiste todas las vidas.\n");
+            }
+        }
+    }
 }
 
 void subirNivel() {
-
 
     nivel++;
     printf("GANÓ! Nivel %d\n", nivel);     
@@ -384,13 +521,13 @@ void subirNivel() {
 
     SDL_Delay(1000);
 
-    inicializarComida();
-
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;      
 
     powerUp = false;
     contadorPowerUp = 0;
+
+    inicializarComida();
     
     Mix_HaltMusic();
 
@@ -400,7 +537,11 @@ void subirNivel() {
 
 }
 
+
 void moverPacman() {
+
+    SDL_Texture* texturaPowerUpBlanca = crearTextura(renderer, "assets/fantasmas/fantasma-blanco.png");
+    SDL_Texture* texturaPowerUpAzul = crearTextura(renderer, "assets/fantasmas/fantasma-azul.png");
 
     int nuevaX = pacmanX + movimientoX;
     int nuevaY = pacmanY + movimientoY;
@@ -424,19 +565,16 @@ void moverPacman() {
             Mix_HaltMusic();
             Mix_PlayMusic(musicaPowerUp, -1);
 
-            if (musicaPowerUp) {
-                printf("Reproduciendo la música Power Up...\n");
-                Mix_PlayMusic(musicaPowerUp, -1);
-            }
-            else {
-                printf("Error: La música de Power Up no se cargó correctamente.\n");
-            }
-
             powerUp = true;
             printf("Power Up\n");
             contadorPowerUp = DURACION_POWERUP; 
             laberinto[celdaY][celdaX] = -2;
             puntaje += 50;
+            fantasmaAmarillo.textura = texturaPowerUpAzul;
+            fantasmaCeleste.textura = texturaPowerUpAzul;
+            fantasmaRosa.textura = texturaPowerUpAzul;
+            fantasmaRojo.textura = texturaPowerUpAzul;
+
         }
         else {
             laberinto[celdaY][celdaX] = -1;
@@ -444,7 +582,7 @@ void moverPacman() {
         }
 
         cantComida--;    
-
+        
         if (cantComida == 0) {
             subirNivel();
         }
@@ -452,15 +590,36 @@ void moverPacman() {
     
     if (powerUp) {
         contadorPowerUp--;
+
+        if (contadorPowerUp <= 150 && contadorPowerUp > 0) {
+
+            fantasmaAmarillo.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
+            fantasmaCeleste.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
+            fantasmaRosa.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
+            fantasmaRojo.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
+
+            contadorFantasma++;
+
+        }
+
         if (contadorPowerUp <= 0) {
             powerUp = false; 
             printf("Terminó power up\n");
+
+            fantasmaAmarillo.textura = crearTextura(renderer, "assets/fantasmas/fantasma-amarillo.png");
+            fantasmaCeleste.textura = crearTextura(renderer, "assets/fantasmas/fantasma-celeste.png");
+            fantasmaRosa.textura = crearTextura(renderer, "assets/fantasmas/fantasma-rosa.png");
+            fantasmaRojo.textura = crearTextura(renderer, "assets/fantasmas/fantasma-rojo.png");
+
+            contadorFantasma = 0;
+
             Mix_HaltMusic();
             Mix_PlayMusic(musicaPrincipal, -1);
         }
     }    
 
 }
+
 
 
 void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
@@ -495,23 +654,34 @@ void cerrarSDL() {
     SDL_DestroyTexture(texturaEsquina4);
     SDL_DestroyTexture(texturaEsquina5);
     SDL_DestroyTexture(texturaEsquina6);
-    SDL_DestroyTexture(texturaPacmanActual);
+    SDL_DestroyTexture(texturaPacmanActual);    
     SDL_DestroyTexture(texturaComida);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(ventana);
 
     Mix_FreeChunk(musicaComer);
+    Mix_FreeMusic(musicaInicio);
     Mix_FreeMusic(musicaPowerUp);
     Mix_FreeMusic(musicaPrincipal);
     Mix_CloseAudio();
 
+    IMG_Quit();
     SDL_Quit();
 
 }
 
 int main(int argc, char* argv[]) {
 
-    SDL_Init(SDL_INIT_EVERYTHING); 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("Error al inicializar SDL: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+        printf("Error al inicializar SDL_image para PNG: %s\n", IMG_GetError());
+        SDL_Quit();
+        return 1;
+    }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         printf("Error de audio: %s\n", Mix_GetError());
@@ -523,13 +693,16 @@ int main(int argc, char* argv[]) {
 
 
     musicaComer = Mix_LoadWAV("assets/musica/pacman-waka-waka.wav");
+    musicaInicio = Mix_LoadMUS("assets/musica/pacman-inicio.mp3");
     musicaPrincipal = Mix_LoadMUS("assets/musica/pacman-siren.mp3");
     musicaPowerUp = Mix_LoadMUS("assets/musica/pacman-powerup3.mp3");
+    musicaMuerte = Mix_LoadMUS("assets/musica/pacman-muerte.mp3");
 
-    if (!musicaComer || !musicaPrincipal || !musicaPowerUp) {
+    if (!musicaComer || !musicaPrincipal || !musicaPowerUp || !musicaInicio || !musicaMuerte) {
         printf("Error al cargar la música: %s\n", Mix_GetError());
         return 1;
     }  
+
 
     ventana = SDL_CreateWindow("Pac Man", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ANCHO, ALTURA, 0);
     renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
@@ -540,17 +713,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Mix_HaltMusic();
-    Mix_PlayMusic(musicaPrincipal, -1);
-
-    if (musicaPrincipal) {
-        printf("Reproduciendo la música principal...\n");
-        Mix_PlayMusic(musicaPrincipal, -1);
-    }
-    else {
-        printf("Error: La música principal no se cargó correctamente.\n");
-    }
-
+    Mix_PlayMusic(musicaInicio, 1);
     
     if (TTF_Init() == -1) {
         printf("Error al inicializar SDL_ttf: %s\n", TTF_GetError());
@@ -568,43 +731,34 @@ int main(int argc, char* argv[]) {
 
     pacmanX = (ANCHO - PACMAN_TAM) / 2 - offsetX;
     pacmanY = 363 - offsetY;
+
+    inicializarComida();
     
     cargarTexturas(renderer);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal, texturaEsquina3, texturaEsquina4, texturaEsquina5,
-        texturaEsquina6, texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12, texturaHorizontal13, texturaHorizontal14, texturaComida);
-    SDL_RenderPresent(renderer);
-
     crearFantasmas();
-    dibujarFantasma(renderer, &fantasmaAmarillo);
 
     pacmanRect.w = PACMAN_TAM;
     pacmanRect.h = PACMAN_TAM;
-    pacmanRect.x = (ANCHO - pacmanRect.w) / 2;
+    pacmanRect.x = offsetX + pacmanX;
     pacmanRect.y = 457;
 
     SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
     SDL_RenderPresent(renderer);
 
-    inicializarComida();
-
     SDL_Event evento;
-    bool running = true;
+    /*bool playing = true;
 
-    while (running) {        
+    while (playing) {        
 
         while (SDL_PollEvent(&evento)) {
             if (evento.type == SDL_QUIT) {
-                running = false;
-            }
-            else if(evento.type == SDL_KEYDOWN){
-                moverSegunTecla(evento);
+                playing = false;
             }
         }
-
 
         actualizarTexturaPacman();
         moverPacman();
@@ -623,18 +777,84 @@ int main(int argc, char* argv[]) {
             texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12,
             texturaHorizontal13, texturaHorizontal14, texturaComida);
         SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
-        
-        dibujarFantasma(renderer, &fantasmaAmarillo);
-        dibujarFantasma(renderer, &fantasmaCeleste);
-        dibujarFantasma(renderer, &fantasmaRosa);
-        dibujarFantasma(renderer, &fantasmaRojo);
-        
-        mostrarPuntaje(renderer, font, puntaje);
 
-        SDL_RenderPresent(renderer);               
+        SDL_RenderPresent(renderer);   
+
+        if (!Mix_PlayingMusic()) {
+            playing = false;
+        }
         
         SDL_Delay(1000 / 50);
     }
+
+
+    SDL_Delay(1000);*/
+
+    Mix_PlayMusic(musicaPrincipal, -1);
+
+    bool running = true;
+
+
+
+    while (running) {
+
+        while (SDL_PollEvent(&evento)) {
+            if (evento.type == SDL_QUIT) {
+                running = false;
+            }
+            else if (evento.type == SDL_KEYDOWN) {
+                moverSegunTecla(evento);
+            }
+        }
+
+
+        actualizarTexturaPacman();
+        moverPacman();
+
+        pacmanRect.w = PACMAN_TAM;
+        pacmanRect.h = PACMAN_TAM;
+        pacmanRect.x = offsetX + pacmanX;
+        pacmanRect.y = offsetY + pacmanY;
+
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        dibujarLaberinto(renderer, texturaVertical, texturaVertical7, texturaVertical8, texturaHorizontal,
+            texturaEsquina3, texturaEsquina4, texturaEsquina5, texturaEsquina6,
+            texturaHorizontal9, texturaHorizontal10, texturaVertical11, texturaVertical12,
+            texturaHorizontal13, texturaHorizontal14, texturaComida);
+        SDL_RenderCopy(renderer, texturaPacmanActual, NULL, &pacmanRect);
+
+        moverFantasma(&fantasmaAmarillo);
+        dibujarFantasma(renderer, &fantasmaAmarillo);
+        manejarColisiones(&fantasmaAmarillo);
+
+        moverFantasma(&fantasmaCeleste);
+        dibujarFantasma(renderer, &fantasmaCeleste);
+        manejarColisiones(&fantasmaCeleste);
+
+        moverFantasma(&fantasmaRosa);
+        dibujarFantasma(renderer, &fantasmaRosa);
+        manejarColisiones(&fantasmaRosa);
+
+        moverFantasma(&fantasmaRojo);
+        dibujarFantasma(renderer, &fantasmaRojo);
+        manejarColisiones(&fantasmaRojo);
+;
+
+        mostrarPuntaje(renderer, font, puntaje);
+
+        SDL_RenderPresent(renderer);
+
+        if (vidas == 0) {
+            printf("Perdió.\n");
+        }
+
+        SDL_Delay(1000 / 70);
+
+    }
+
     
     cerrarSDL();
 
