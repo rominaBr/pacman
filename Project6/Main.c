@@ -100,6 +100,7 @@ Mix_Music* musicaInicio;
 Mix_Music* musicaPrincipal;
 Mix_Music* musicaPowerUp;
 Mix_Music* musicaMuerte;
+TTF_Font* font;
 SDL_Rect pacmanRect;
 Fantasma fantasmaRojo, fantasmaRosa, fantasmaCeleste, fantasmaAmarillo;
 
@@ -474,6 +475,61 @@ void animarMuertePacman() {
 
 }
 
+bool mostrarPantallaGameOver(SDL_Renderer* renderer, TTF_Font* font) {
+    SDL_Color color = { 255, 255, 255 };  // Color blanco para el texto
+    SDL_Surface* surfaceMensaje = TTF_RenderText_Solid(font, "GAME OVER", color);
+    SDL_Surface* surfaceOpcion1 = TTF_RenderText_Solid(font, "Presiona R para Reiniciar", color);
+    SDL_Surface* surfaceOpcion2 = TTF_RenderText_Solid(font, "Presiona Q para Salir", color);
+
+    SDL_Texture* texturaMensaje = SDL_CreateTextureFromSurface(renderer, surfaceMensaje);
+    SDL_Texture* texturaOpcion1 = SDL_CreateTextureFromSurface(renderer, surfaceOpcion1);
+    SDL_Texture* texturaOpcion2 = SDL_CreateTextureFromSurface(renderer, surfaceOpcion2);
+
+    SDL_Rect rectMensaje = { ANCHO / 2 - surfaceMensaje->w / 2, ALTURA / 3, surfaceMensaje->w, surfaceMensaje->h };
+    SDL_Rect rectOpcion1 = { ANCHO / 2 - surfaceOpcion1->w / 2, ALTURA / 2, surfaceOpcion1->w, surfaceOpcion1->h };
+    SDL_Rect rectOpcion2 = { ANCHO / 2 - surfaceOpcion2->w / 2, ALTURA / 2 + 40, surfaceOpcion2->w, surfaceOpcion2->h };
+
+    SDL_FreeSurface(surfaceMensaje);
+    SDL_FreeSurface(surfaceOpcion1);
+    SDL_FreeSurface(surfaceOpcion2);
+
+    bool seleccionHecha = false;
+    bool reiniciar = false;
+
+    while (!seleccionHecha) {
+        SDL_Event evento;
+        while (SDL_PollEvent(&evento)) {
+            if (evento.type == SDL_QUIT) {
+                seleccionHecha = true;
+                reiniciar = false;  // Para salir del juego
+            }
+            else if (evento.type == SDL_KEYDOWN) {
+                if (evento.key.keysym.sym == SDLK_r) {  // Presiona R para reiniciar
+                    seleccionHecha = true;
+                    reiniciar = true;
+                }
+                else if (evento.key.keysym.sym == SDLK_q) {  // Presiona Q para salir
+                    seleccionHecha = true;
+                    reiniciar = false;
+                }
+            }
+        }
+
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texturaMensaje, NULL, &rectMensaje);
+        SDL_RenderCopy(renderer, texturaOpcion1, NULL, &rectOpcion1);
+        SDL_RenderCopy(renderer, texturaOpcion2, NULL, &rectOpcion2);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(100);
+    }
+
+    SDL_DestroyTexture(texturaMensaje);
+    SDL_DestroyTexture(texturaOpcion1);
+    SDL_DestroyTexture(texturaOpcion2);
+
+    return reiniciar;
+}
+
 bool detectarColision(int xFantasma, int yFantasma) {
 
     int margen = 11;
@@ -481,6 +537,48 @@ bool detectarColision(int xFantasma, int yFantasma) {
     SDL_Rect fantasmaRect = { xFantasma, yFantasma, CELDA_TAM, CELDA_TAM };
 
     return SDL_HasIntersection(&pacmanRect, &fantasmaRect);
+
+}
+
+
+void cerrarSDL() {
+
+    SDL_DestroyTexture(texturaVertical);
+    SDL_DestroyTexture(texturaVertical7);
+    SDL_DestroyTexture(texturaVertical8);
+    SDL_DestroyTexture(texturaHorizontal);
+    SDL_DestroyTexture(texturaHorizontal9);
+    SDL_DestroyTexture(texturaHorizontal10);
+    SDL_DestroyTexture(texturaVertical11);
+    SDL_DestroyTexture(texturaVertical12);
+    SDL_DestroyTexture(texturaHorizontal13);
+    SDL_DestroyTexture(texturaHorizontal14);
+    SDL_DestroyTexture(texturaEsquina3);
+    SDL_DestroyTexture(texturaEsquina4);
+    SDL_DestroyTexture(texturaEsquina5);
+    SDL_DestroyTexture(texturaEsquina6);
+    SDL_DestroyTexture(texturaPacmanActual);
+    SDL_DestroyTexture(texturaComida);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(ventana);
+
+    Mix_FreeChunk(musicaComer);
+    Mix_FreeMusic(musicaInicio);
+    Mix_FreeMusic(musicaPowerUp);
+    Mix_FreeMusic(musicaPrincipal);
+    Mix_CloseAudio();
+
+    IMG_Quit();
+    SDL_Quit();
+
+}
+
+void reiniciarJuegoCompleto() {
+    vidas = 3;
+    puntaje = 0;
+    nivel = 1;
+    inicializarComida();
+    reiniciarPosiciones();
 
 }
 
@@ -500,7 +598,14 @@ void manejarColisiones(Fantasma* fantasma) {
                 reiniciarPosiciones();
             }
             else {
-                printf("Perdiste todas las vidas.\n");
+                bool reiniciarJuego = mostrarPantallaGameOver(renderer, font);
+                if (reiniciarJuego) {
+                    reiniciarJuegoCompleto();
+                }
+                else {
+                    cerrarSDL();
+                    exit(0);
+                }
             }
         }
     }
@@ -621,7 +726,6 @@ void moverPacman() {
 }
 
 
-
 void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
     SDL_Color color = { 255, 255, 255 }; 
     char puntajeTexto[20];
@@ -638,37 +742,8 @@ void mostrarPuntaje(SDL_Renderer* render, TTF_Font* fuente, int puntaje) {
 
 }
 
-void cerrarSDL() {
 
-    SDL_DestroyTexture(texturaVertical);
-    SDL_DestroyTexture(texturaVertical7);
-    SDL_DestroyTexture(texturaVertical8);
-    SDL_DestroyTexture(texturaHorizontal);
-    SDL_DestroyTexture(texturaHorizontal9);
-    SDL_DestroyTexture(texturaHorizontal10);
-    SDL_DestroyTexture(texturaVertical11);
-    SDL_DestroyTexture(texturaVertical12);
-    SDL_DestroyTexture(texturaHorizontal13);
-    SDL_DestroyTexture(texturaHorizontal14);
-    SDL_DestroyTexture(texturaEsquina3);
-    SDL_DestroyTexture(texturaEsquina4);
-    SDL_DestroyTexture(texturaEsquina5);
-    SDL_DestroyTexture(texturaEsquina6);
-    SDL_DestroyTexture(texturaPacmanActual);    
-    SDL_DestroyTexture(texturaComida);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(ventana);
 
-    Mix_FreeChunk(musicaComer);
-    Mix_FreeMusic(musicaInicio);
-    Mix_FreeMusic(musicaPowerUp);
-    Mix_FreeMusic(musicaPrincipal);
-    Mix_CloseAudio();
-
-    IMG_Quit();
-    SDL_Quit();
-
-}
 
 int main(int argc, char* argv[]) {
 
@@ -721,7 +796,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    TTF_Font* font = TTF_OpenFont("assets/fonts/FreeSans.ttf", 24);
+    font = TTF_OpenFont("assets/fonts/FreeSans.ttf", 24);
+
     if (!font) {
         printf("Error al cargar la fuente: %s\n", TTF_GetError());
         TTF_Quit();
