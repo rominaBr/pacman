@@ -8,7 +8,7 @@
 #define ANCHO 530
 #define ALTURA 630
 #define CELDA_TAM 25
-#define PACMAN_TAM 23
+#define PACMAN_TAM 20
 #define COMIDA_TAM 12
 #define COMIDA_TAM_ESP 24
 #define N 23
@@ -22,6 +22,7 @@
 typedef struct {
     int x, y;               // Posición en el laberinto
     int dx, dy;             // Dirección de movimiento
+    int xInicial, yInicial;  //la primera vez calcula su posición inicial con el contenido de la matriz y guarda para los reinicios de nivel y del juego
     bool vivo;  
     SDL_Texture* textura; 
     int floatOffset; 
@@ -349,16 +350,21 @@ void crearFantasmas() {
             int y = i * CELDA_TAM + offsetY;
             switch (laberinto[i][j]) {
             case 22: inicializarFantasma(&fantasmaAmarillo, x, y, texturaAmarillo);   
-                //printf("%d %d\n", x, y);
+                fantasmaAmarillo.xInicial = x;
+                fantasmaAmarillo.yInicial = y;
                 break;
             case 23: inicializarFantasma(&fantasmaCeleste, x, y, texturaCeleste); 
-                printf("%d %d\n", x, y);
+                fantasmaCeleste.xInicial = x;
+                fantasmaCeleste.yInicial = y;                
                 break;
             case 24: inicializarFantasma(&fantasmaRosa, x, y, texturaRosa);
-                //printf("%d %d\n", x, y);
+                fantasmaRosa.xInicial = x;
+                fantasmaRosa.yInicial = y;                
                 break;
             case 25: inicializarFantasma(&fantasmaRojo, x, y, texturaRoja);
-                //printf("%d %d\n", x, y);
+                fantasmaRojo.xInicial = x;
+                fantasmaRojo.yInicial = y;
+                
                 break;
             }
 
@@ -415,10 +421,10 @@ void reiniciarPosiciones() {
 
     Mix_PlayMusic(musicaPrincipal, -1);
 
-    inicializarFantasma(&fantasmaRojo, 252, 237, texturaRoja);
-    inicializarFantasma(&fantasmaRosa, 277, 312, texturaRosa);
-    inicializarFantasma(&fantasmaCeleste, 252, 312, texturaCeleste);
-    inicializarFantasma(&fantasmaAmarillo, 227, 312, texturaAmarillo);
+    inicializarFantasma(&fantasmaRojo, fantasmaRojo.xInicial, fantasmaRojo.yInicial, texturaRoja);
+    inicializarFantasma(&fantasmaRosa, fantasmaRosa.xInicial, fantasmaRosa.yInicial, texturaRosa);
+    inicializarFantasma(&fantasmaCeleste, fantasmaCeleste.xInicial, fantasmaCeleste.yInicial, texturaCeleste);
+    inicializarFantasma(&fantasmaAmarillo, fantasmaAmarillo.xInicial, fantasmaAmarillo.yInicial, texturaAmarillo);
 
  
     SDL_RenderClear(renderer);
@@ -532,9 +538,12 @@ bool mostrarPantallaGameOver(SDL_Renderer* renderer, TTF_Font* font) {
 
 bool detectarColision(int xFantasma, int yFantasma) {
 
-    int margen = 11;
+    int margen = 9;
     SDL_Rect pacmanRect = { pacmanX + offsetX + margen, pacmanY + offsetY, PACMAN_TAM - margen * 2, PACMAN_TAM };
     SDL_Rect fantasmaRect = { xFantasma, yFantasma, CELDA_TAM, CELDA_TAM };
+
+    printf("Rect pacman %d %d\n",pacmanRect.x, pacmanRect.y);
+    printf("Rect fantasma %d %d\n", fantasmaRect.x, fantasmaRect.y);
 
     return SDL_HasIntersection(&pacmanRect, &fantasmaRect);
 
@@ -633,6 +642,7 @@ void subirNivel() {
     contadorPowerUp = 0;
 
     inicializarComida();
+    reiniciarPosiciones();
     
     Mix_HaltMusic();
 
@@ -826,7 +836,8 @@ int main(int argc, char* argv[]) {
     SDL_RenderPresent(renderer);
 
     SDL_Event evento;
-    bool playing = true;
+
+    /*bool playing = true;
 
     while (playing) {        
 
@@ -864,13 +875,12 @@ int main(int argc, char* argv[]) {
     }
 
 
-    SDL_Delay(1000);
+    SDL_Delay(1000);*/
 
     Mix_PlayMusic(musicaPrincipal, -1);
 
+    
     bool running = true;
-
-
 
     while (running) {
 
