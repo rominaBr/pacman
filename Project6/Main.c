@@ -40,6 +40,7 @@ int movimientoY = 0;
 int nivel = 1;
 int contadorBoca = 0;
 int contadorFantasma = 0;
+bool reiniciar = false;
 
 int laberinto[N][M] = {
     {3, 2, 2, 2, 2, 2, 2, 2, 2, 9, 2, 2, 2, 2, 2, 2, 2, 2, 4},
@@ -306,7 +307,7 @@ bool esPosicionValida(int x, int y) {
 void inicializarComida() {
     cantComida = 0;
 
-    if (nivel > 1) {
+    if (nivel > 1 || reiniciar) {
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < M; j++) {
                 if (laberinto[i][j] == -1) {
@@ -493,8 +494,7 @@ bool mostrarPantallaGameOver(SDL_Renderer* renderer, TTF_Font* font) {
     SDL_FreeSurface(surfaceOpcion1);
     SDL_FreeSurface(surfaceOpcion2);
 
-    bool seleccionHecha = false;
-    bool reiniciar = false;
+    bool seleccionHecha = false;    
 
     while (!seleccionHecha) {
         SDL_Event evento;
@@ -826,7 +826,7 @@ int main(int argc, char* argv[]) {
     SDL_RenderPresent(renderer);
 
     SDL_Event evento;
-    /*bool playing = true;
+    bool playing = true;
 
     while (playing) {        
 
@@ -864,7 +864,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    SDL_Delay(1000);*/
+    SDL_Delay(1000);
 
     Mix_PlayMusic(musicaPrincipal, -1);
 
