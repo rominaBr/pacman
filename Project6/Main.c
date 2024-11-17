@@ -35,6 +35,7 @@ typedef struct {
     bool vivo;  
     bool modoPersecucion;
     SDL_Texture* textura; 
+    char color;
     int floatOffset; 
     int floatDirection;
 } Fantasma;
@@ -320,8 +321,8 @@ bool esPosicionValida(int x, int y) {
 bool esPosicionValidaFantasma(int x, int y) {
     int celX1 = x / CELDA_TAM - 1;
     int celY1 = y / CELDA_TAM - 1;
-    int celX2 = ((x + PACMAN_TAM - 1) / CELDA_TAM) - 1;
-    int celY2 = ((y + PACMAN_TAM - 1) / CELDA_TAM) - 1;
+    int celX2 = ((x + PACMAN_TAM - 1) / CELDA_TAM - 1);
+    int celY2 = ((y + PACMAN_TAM - 1) / CELDA_TAM - 1);
     
 
     return ((laberinto[celY1][celX1] == 0 || laberinto[celY1][celX1] == 20 || laberinto[celY1][celX1] == -1 || laberinto[celY1][celX1] == -2 || laberinto[celY1][celX1] == -3 || laberinto[celY1][celX1] == -4 || laberinto[celY1][celX1] == 15 || laberinto[celY1][celX1] >= 22 ) &&
@@ -394,18 +395,22 @@ void crearFantasmas() {
             case 22: inicializarFantasma(&fantasmaAmarillo, x, y, texturaAmarillo);   
                 fantasmaAmarillo.xInicial = x;
                 fantasmaAmarillo.yInicial = y;
+                fantasmaAmarillo.color = "amarillo";
                 break;
             case 23: inicializarFantasma(&fantasmaCeleste, x, y, texturaCeleste); 
                 fantasmaCeleste.xInicial = x;
-                fantasmaCeleste.yInicial = y;                
+                fantasmaCeleste.yInicial = y;   
+                fantasmaAmarillo.color = "celeste";
                 break;
             case 24: inicializarFantasma(&fantasmaRosa, x, y, texturaRosa);
                 fantasmaRosa.xInicial = x;
-                fantasmaRosa.yInicial = y;                
+                fantasmaRosa.yInicial = y;    
+                fantasmaAmarillo.color = "rosa";
                 break;
             case 25: inicializarFantasma(&fantasmaRojo, x, y, texturaRoja);
                 fantasmaRojo.xInicial = x;
                 fantasmaRojo.yInicial = y;
+                fantasmaAmarillo.color = "rojo";
                 
                 break;
             }
@@ -416,6 +421,20 @@ void crearFantasmas() {
 
 
 
+void moverFantasmaRojo() {
+    
+    printf("%d %d\n", fantasmaRojo.x, fantasmaRojo.y);
+    /*fantasmaRojo.x = fantasmaRojo.x + CELDA_TAM / 10;
+    fantasmaRojo.y = 0;*/
+    int nuevaX = fantasmaRojo.x = fantasmaRojo.x + 2;
+    int nuevaY = fantasmaRojo.y = fantasmaRojo.y + 0;
+
+    if (esPosicionValidaFantasma(fantasmaRojo.x, fantasmaRojo.y)) {
+        printf("Es válida\n");
+        
+    }
+
+}
 
 
 void moverFantasma(Fantasma* fantasma) {
@@ -445,9 +464,10 @@ void moverFantasma(Fantasma* fantasma) {
 
     // Si el fantasma no tiene dirección, elige una aleatoria
     if (fantasma->movimientoX == 0 && fantasma->movimientoY == 0) {
-        int indice = rand() % 4;
-        fantasma->movimientoX = direcciones[indice][0];
-        fantasma->movimientoY = direcciones[indice][1];
+        
+        fantasma->movimientoX = CELDA_TAM / 10;
+        fantasma->movimientoY = 0;
+        printf("Sin movimiento.\n");
     }
 
     // Calcula la nueva posición
@@ -458,53 +478,69 @@ void moverFantasma(Fantasma* fantasma) {
     if (esPosicionValidaFantasma(nuevaX, nuevaY)) {
         fantasma->x = nuevaX;
         fantasma->y = nuevaY;
+        
     }
     else {        
         // Si no es válida, elige una nueva dirección al azar
         int indice = rand() % 4;
         fantasma->movimientoX = direcciones[indice][0];
         fantasma->movimientoY = direcciones[indice][1];
+        
     }
 }
 
-/*void moverFantasma(Fantasma* fantasma) {
+/*
+void moverFantasma(Fantasma* fantasma) {
+    // Movimiento flotante para el efecto visual
+    static int contadorFlotacion = 0;
 
-    fantasma->floatOffset += fantasma->floatDirection;
-
-    if (fantasma->floatOffset >= 5 || fantasma->floatOffset <= -5) {
-        fantasma->floatDirection = -fantasma->floatDirection;
+    if (contadorFlotacion++ % 20 == 0) { // Ajusta el valor para la lentitud deseada
+        fantasma->floatOffset += fantasma->floatDirection;
     }
 
-    int dx = pacman.pacmanX - fantasma->x;
-    int dy = pacman.pacmanY - fantasma->y;
+    if (fantasma->floatOffset >= 5 || fantasma->floatOffset <= -5) { // Ajusta el límite según el efecto deseado
+        fantasma->floatDirection = -fantasma->floatDirection; // Invierte la dirección
+    }
 
-    int direcciones[4][2];
-    if (abs(dx) > abs(dy)) {
-        direcciones[0][0] = (dx > 0) ? CELDA_TAM / 10 : -CELDA_TAM / 10; direcciones[0][1] = 0; // Prioriza en X
-        direcciones[1][0] = 0; direcciones[1][1] = (dy > 0) ? CELDA_TAM / 10 : -CELDA_TAM / 10; // Luego en Y
+    // Calcular la dirección hacia Pac-Man
+    int direccionX = 0, direccionY = 0;
+
+    if (fantasma->x < pacman.pacmanX) {
+        direccionX = CELDA_TAM / 10; // Mover hacia la derecha
+    }
+    else if (fantasma->x > pacman.pacmanX) {
+        direccionX = -CELDA_TAM / 10; // Mover hacia la izquierda
+    }
+
+    if (fantasma->y < pacman.pacmanY) {
+        direccionY = CELDA_TAM / 10; // Mover hacia abajo
+    }
+    else if (fantasma->y > pacman.pacmanY) {
+        direccionY = -CELDA_TAM / 10; // Mover hacia arriba
+    }
+
+    // Calcula la nueva posición
+    int nuevaX = fantasma->x + direccionX;
+    int nuevaY = fantasma->y + direccionY;
+
+    printf("%d\n",nuevaX);
+    printf("%d\n", nuevaY);
+
+    // Verifica si la nueva posición es válida
+    if (esPosicionValidaFantasma(nuevaX, nuevaY)) {
+        fantasma->x = nuevaX;
+        fantasma->y = nuevaY;
+        fantasma->movimientoX = direccionX;
+        fantasma->movimientoY = direccionY;
+        printf("Es válida.\n");
     }
     else {
-        direcciones[0][0] = 0; direcciones[0][1] = (dy > 0) ? CELDA_TAM / 10 : -CELDA_TAM / 10; // Prioriza en Y
-        direcciones[1][0] = (dx > 0) ? CELDA_TAM / 10 : -CELDA_TAM / 10; direcciones[1][1] = 0; // Luego en X
+        // Si no es válida, detener al fantasma (o elegir una alternativa según el caso)
+        fantasma->movimientoX = 0;
+        fantasma->movimientoY = 0;
+        printf("Es inválida.\n");
     }
-
-    direcciones[2][0] = -direcciones[0][0]; direcciones[2][1] = -direcciones[0][1];
-    direcciones[3][0] = -direcciones[1][0]; direcciones[3][1] = -direcciones[1][1];
-
-    for (int i = 0; i < 4; i++) {
-        int nuevaX = fantasma->x + direcciones[i][0];
-        int nuevaY = fantasma->y + direcciones[i][1];
-        if (esPosicionValidaFantasma(nuevaX, nuevaY)) {
-            fantasma->movimientoX = direcciones[i][0];
-            fantasma->movimientoY = direcciones[i][1];
-            break;
-        }
-    }
-
-    fantasma->x += fantasma->movimientoX;
-    fantasma->y += fantasma->movimientoY;
 }*/
-
 
 
 
@@ -804,7 +840,6 @@ void moverPacman() {
             fantasmaRosa.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
             fantasmaRojo.textura = (contadorFantasma / 10) % 2 == 0 ? texturaPowerUpBlanca : texturaPowerUpAzul;
 
-            
 
             contadorFantasma++;
 
@@ -1020,7 +1055,7 @@ int main(int argc, char* argv[]) {
         dibujarFantasma(renderer, &fantasmaRosa);
         manejarColisiones(&fantasmaRosa);
 
-        moverFantasma(&fantasmaRojo);
+        moverFantasma(&fantasmaRojo);        
         dibujarFantasma(renderer, &fantasmaRojo);
         manejarColisiones(&fantasmaRojo);
 
@@ -1033,7 +1068,7 @@ int main(int argc, char* argv[]) {
             printf("Perdió.\n");
         }
 
-        SDL_Delay(1000 / 70);
+        SDL_Delay(1000 / 60);
 
     }
 
