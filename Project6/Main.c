@@ -151,6 +151,7 @@ Mix_Chunk* musicaOjosPosicionInicial;
 Mix_Chunk* musicaComerFantasma;
 Mix_Music* musicaCambioNivel;
 TTF_Font* font;
+TTF_Font* fontPuntaje;
 SDL_Rect pacmanRect;
 Fantasma fantasmaRojo, fantasmaRosa, fantasmaCeleste, fantasmaAmarillo;
 Pacman pacman;
@@ -819,7 +820,7 @@ void animarMuerteFantasma(Fantasma* fantasma, int puntajeGanado) {
     char textoPuntaje[10];
     snprintf(textoPuntaje, sizeof(textoPuntaje), "+%d", puntajeGanado);
 
-    SDL_Surface* surfacePuntaje = TTF_RenderText_Solid(font, textoPuntaje, color);
+    SDL_Surface* surfacePuntaje = TTF_RenderText_Solid(fontPuntaje, textoPuntaje, color);
     SDL_Texture* texturaPuntaje = SDL_CreateTextureFromSurface(renderer, surfacePuntaje);
     SDL_FreeSurface(surfacePuntaje);
 
@@ -1148,8 +1149,9 @@ int main(int argc, char* argv[]) {
     }
 
     font = TTF_OpenFont("assets/fonts/FreeSans.ttf", 24);
+    fontPuntaje = TTF_OpenFont("assets/fonts/FreeSans.ttf", 14);
 
-    if (!font) {
+    if (!font || !fontPuntaje) {
         printf("Error al cargar la fuente: %s\n", TTF_GetError());
         TTF_Quit();
         SDL_Quit();
