@@ -60,6 +60,7 @@ int nivel = 1;
 int contadorBoca = 0;
 int contadorFantasma = 0;
 bool reiniciar = false;
+bool enPausa = false;
 int actualizacionesPorLlamada = 1;
 
 int laberinto[N][M] = {
@@ -703,6 +704,9 @@ void animarMuertePacman() {
         SDL_Delay(tiempoPorSprite);
     }
 
+    for (int i = 0; i < 8; i++) {
+        SDL_DestroyTexture(spritesMuerte[i]);
+    }
 }
 
 bool mostrarPantallaGameOver(TTF_Font* font) {
@@ -790,13 +794,40 @@ void cerrarSDL() {
     SDL_DestroyTexture(texturaComida);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(ventana);
+    SDL_DestroyTexture(pacmanDer);
+    SDL_DestroyTexture(pacmanIzq);
+    SDL_DestroyTexture(pacmanArriba);
+    SDL_DestroyTexture(pacmanAbajo);
+    SDL_DestroyTexture(pacmanBocaCerrada);
+    SDL_DestroyTexture(texturaAmarillo);
+    SDL_DestroyTexture(texturaCeleste);
+    SDL_DestroyTexture(texturaRoja);
+    SDL_DestroyTexture(texturaRosa);
+    SDL_DestroyTexture(texturaAmarilloIzq);
+    SDL_DestroyTexture(texturaCelesteIzq);
+    SDL_DestroyTexture(texturaRojaIzq);
+    SDL_DestroyTexture(texturaRosaIzq);
+    SDL_DestroyTexture(texturaAmarilloArr);
+    SDL_DestroyTexture(texturaCelesteArr);
+    SDL_DestroyTexture(texturaRojaArr);
+    SDL_DestroyTexture(texturaRosaArr);
+    SDL_DestroyTexture(texturaAmarilloAb);
+    SDL_DestroyTexture(texturaCelesteAb);
+    SDL_DestroyTexture(texturaRojaAb);
+    SDL_DestroyTexture(texturaRosaAb);
+
 
     Mix_FreeChunk(musicaComer);
     Mix_FreeMusic(musicaInicio);
     Mix_FreeMusic(musicaPowerUp);
     Mix_FreeMusic(musicaPrincipal);
     Mix_FreeChunk(musicaComerFantasma);
+    Mix_FreeChunk(musicaOjosPosicionInicial);
+    Mix_FreeChunk(musicaComerFantasma);
     Mix_CloseAudio();
+
+    TTF_CloseFont(font);
+    TTF_CloseFont(fontPuntaje);
 
     IMG_Quit();
     SDL_Quit();
@@ -965,8 +996,8 @@ void moverPacman() {
         pacman.pacmanY = nuevaY;
     }
     
-    int celdaX = pacman.pacmanX / CELDA_TAM;
-    int celdaY = pacman.pacmanY / CELDA_TAM;
+    int celdaX = (pacman.pacmanX + PACMAN_TAM / 2) / CELDA_TAM;
+    int celdaY = (pacman.pacmanY + PACMAN_TAM / 2) / CELDA_TAM;
     
     
     if (laberinto[celdaY][celdaX] == 0 || laberinto[celdaY][celdaX] == 20) {
@@ -983,7 +1014,6 @@ void moverPacman() {
             fantasmaRosa.powerUp = true;
             fantasmaRojo.powerUp = true;
 
-            printf("Power Up\n");
             contadorPowerUp = DURACION_POWERUP; 
             laberinto[celdaY][celdaX] = -2;
             puntaje += 50;
@@ -999,9 +1029,13 @@ void moverPacman() {
         }
 
         cantComida--;   
-        printf("Cantidad de comida restante: %d\n", cantComida);
         
         if (cantComida == 0) {
+            SDL_RenderClear(renderer);
+            dibujarLaberinto();
+            SDL_RenderCopy(renderer, pacman.textura, NULL, &pacmanRect);
+            SDL_RenderPresent(renderer);
+            SDL_Delay(500);
             subirNivel();
         }
     }
@@ -1235,52 +1269,77 @@ int main(int argc, char* argv[]) {
                 running = false;
             }
             else if (evento.type == SDL_KEYDOWN) {
-                moverSegunTecla(evento);
+                if (evento.key.keysym.sym == SDLK_RETURN) {  
+                    enPausa = !enPausa;  
+
+                    if (enPausa) {
+                        Mix_PauseMusic();
+                    }
+                    else {
+                        Mix_ResumeMusic(); 
+                    }
+                }
+                else if (!enPausa) {
+                    moverSegunTecla(evento);  
+                }
             }
         }
 
+        if (!enPausa) {
+            actualizarTexturaPacman();
 
-        actualizarTexturaPacman();
-        moverPacman();
-
-        pacmanRect.w = PACMAN_TAM;
-        pacmanRect.h = PACMAN_TAM;
-        pacmanRect.x = offsetX + pacman.pacmanX;
-        pacmanRect.y = offsetY + pacman.pacmanY;
+            pacmanRect.w = PACMAN_TAM;
+            pacmanRect.h = PACMAN_TAM;
+            pacmanRect.x = offsetX + pacman.pacmanX;
+            pacmanRect.y = offsetY + pacman.pacmanY;
 
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
 
-        dibujarLaberinto();
+            dibujarLaberinto();
 
-        SDL_RenderCopy(renderer, pacman.textura, NULL, &pacmanRect);
-        
-        crearCaminos();
+            crearCaminos();
 
-        moverFantasma(&fantasmaRojo, caminoRojo, &indiceActualRojo, totalMovimientosRojo);
-        dibujarFantasma(renderer, &fantasmaRojo);
-        manejarColisiones(&fantasmaRojo);
-        
-        moverFantasma(&fantasmaAmarillo, caminoAmarillo, &indiceActualAmarillo, totalMovimientosAmarillo);
-        dibujarFantasma(renderer, &fantasmaAmarillo);
-        manejarColisiones(&fantasmaAmarillo);
-        
-        moverFantasma(&fantasmaCeleste, caminoCeleste, &indiceActualCeleste, totalMovimientosCeleste);
-        dibujarFantasma(renderer, &fantasmaCeleste);
-        manejarColisiones(&fantasmaCeleste);
-        
-        moverFantasma(&fantasmaRosa, caminoRosa, &indiceActualRosa, totalMovimientosRosa);
-        dibujarFantasma(renderer, &fantasmaRosa);
-        manejarColisiones(&fantasmaRosa); 
+            moverFantasma(&fantasmaRojo, caminoRojo, &indiceActualRojo, totalMovimientosRojo);
+            dibujarFantasma(renderer, &fantasmaRojo);
+            manejarColisiones(&fantasmaRojo);
 
-        mostrarPuntaje(renderer, font, puntaje);
-        mostrarNivelYVidas(renderer, font, nivel, pacman.vidas, pacmanDer);
+            moverFantasma(&fantasmaAmarillo, caminoAmarillo, &indiceActualAmarillo, totalMovimientosAmarillo);
+            dibujarFantasma(renderer, &fantasmaAmarillo);
+            manejarColisiones(&fantasmaAmarillo);
+
+            moverFantasma(&fantasmaCeleste, caminoCeleste, &indiceActualCeleste, totalMovimientosCeleste);
+            dibujarFantasma(renderer, &fantasmaCeleste);
+            manejarColisiones(&fantasmaCeleste);
+
+            moverFantasma(&fantasmaRosa, caminoRosa, &indiceActualRosa, totalMovimientosRosa);
+            dibujarFantasma(renderer, &fantasmaRosa);
+            manejarColisiones(&fantasmaRosa);
+
+            mostrarPuntaje(renderer, font, puntaje);
+            mostrarNivelYVidas(renderer, font, nivel, pacman.vidas, pacmanDer);
+
+            SDL_RenderCopy(renderer, pacman.textura, NULL, &pacmanRect);
+            
+
+            moverPacman();
+
+            
+        }
+
+        if (enPausa) {
+            SDL_Color color = { 255, 255, 255 };
+            SDL_Surface* surfaceTexto = TTF_RenderText_Solid(font, "PAUSA", color);
+            SDL_Texture* texturaTexto = SDL_CreateTextureFromSurface(renderer, surfaceTexto);
+            SDL_FreeSurface(surfaceTexto);
+            SDL_Rect rectTexto = { ANCHO / 2 - 50, ALTURA / 2 - 20, 100, 40 };
+            SDL_RenderCopy(renderer, texturaTexto, NULL, &rectTexto);
+            SDL_DestroyTexture(texturaTexto);
+        }
 
         SDL_RenderPresent(renderer);
-
         SDL_Delay(1000 / 60);
-
     }
 
     
