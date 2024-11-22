@@ -90,7 +90,6 @@ int laberinto[N][M] = {
 };
 
 
-int div = 20;
 int totalMovimientosRojo, totalMovimientosAmarillo, totalMovimientosCeleste, totalMovimientosRosa;
 int indiceActualRojo, indiceActualAmarillo, indiceActualCeleste, indiceActualRosa;
 
@@ -420,98 +419,98 @@ void inicializarPacman(Pacman* pacman, SDL_Texture* textura) {
 
 void crearCaminos() {
 
-    caminoRojo[0] = (Movimiento){ 'D', 4 * div};
-    caminoRojo[1] = (Movimiento){ 'B', 8 * div};
-    caminoRojo[2] = (Movimiento){ 'I', 3 * div};
-    caminoRojo[3] = (Movimiento){ 'B', 3 * div};
-    caminoRojo[4] = (Movimiento){ 'I', 7 * div};
-    caminoRojo[5] = (Movimiento){ 'A', 20 * div};
-    caminoRojo[6] = (Movimiento){ 'D', 5 * div };
-    caminoRojo[7] = (Movimiento){ 'B', 4 * div };
-    caminoRojo[8] = (Movimiento){ 'D', 5 * div };
-    caminoRojo[9] = (Movimiento){ 'B', 2 * div };
-    caminoRojo[10] = (Movimiento){ 'I', 3 * div };
-    caminoRojo[11] = (Movimiento){ 'B', 3 * div };
-    caminoRojo[12] = (Movimiento){ 'I', 1 * div };
+    caminoRojo[0] = (Movimiento){ 'D', 80};
+    caminoRojo[1] = (Movimiento){ 'B', 160};
+    caminoRojo[2] = (Movimiento){ 'I', 60};
+    caminoRojo[3] = (Movimiento){ 'B', 60};
+    caminoRojo[4] = (Movimiento){ 'I', 140};
+    caminoRojo[5] = (Movimiento){ 'A', 400};
+    caminoRojo[6] = (Movimiento){ 'D', 100 };
+    caminoRojo[7] = (Movimiento){ 'B', 80 };
+    caminoRojo[8] = (Movimiento){ 'D', 100 };
+    caminoRojo[9] = (Movimiento){ 'B', 40 };
+    caminoRojo[10] = (Movimiento){ 'I', 60 };
+    caminoRojo[11] = (Movimiento){ 'B', 60 };
+    caminoRojo[12] = (Movimiento){ 'I', 20 };
     totalMovimientosRojo = sizeof(caminoRojo) / sizeof(caminoRojo[0]);
 
 
-    caminoAmarillo[0] = (Movimiento){ 'A', 1 * div };
-    caminoAmarillo[1] = (Movimiento){ 'D', 1 * div };
-    caminoAmarillo[2] = (Movimiento){ 'A', 3 * div };
-    caminoAmarillo[3] = (Movimiento){ 'I', 3 * div };
-    caminoAmarillo[4] = (Movimiento){ 'B', 7 * div };
-    caminoAmarillo[5] = (Movimiento){ 'D', 7 * div };
-    caminoAmarillo[6] = (Movimiento){ 'B', 2 * div };
-    caminoAmarillo[7] = (Movimiento){ 'I', 3 * div };
-    caminoAmarillo[8] = (Movimiento){ 'B', 2 * div };
-    caminoAmarillo[9] = (Movimiento){ 'D', 5 * div };
-    caminoAmarillo[10] = (Movimiento){ 'A', 8 * div };
-    caminoAmarillo[11] = (Movimiento){ 'I', 2 * div };
-    caminoAmarillo[12] = (Movimiento){ 'A', 3 * div };
-    caminoAmarillo[13] = (Movimiento){ 'I', 4 * div };
-    caminoAmarillo[14] = (Movimiento){ 'B', 4 * div };
-    caminoAmarillo[15] = (Movimiento){ 'I', 1 * div };
+    caminoAmarillo[0] = (Movimiento){ 'A', 20 };
+    caminoAmarillo[1] = (Movimiento){ 'D', 20 };
+    caminoAmarillo[2] = (Movimiento){ 'A', 60 };
+    caminoAmarillo[3] = (Movimiento){ 'I', 60 };
+    caminoAmarillo[4] = (Movimiento){ 'B', 140 };
+    caminoAmarillo[5] = (Movimiento){ 'D', 140 };
+    caminoAmarillo[6] = (Movimiento){ 'B', 40 };
+    caminoAmarillo[7] = (Movimiento){ 'I', 60 };
+    caminoAmarillo[8] = (Movimiento){ 'B', 40 };
+    caminoAmarillo[9] = (Movimiento){ 'D', 100 };
+    caminoAmarillo[10] = (Movimiento){ 'A', 160 };
+    caminoAmarillo[11] = (Movimiento){ 'I', 40 };
+    caminoAmarillo[12] = (Movimiento){ 'A', 60 };
+    caminoAmarillo[13] = (Movimiento){ 'I', 80 };
+    caminoAmarillo[14] = (Movimiento){ 'B', 80 };
+    caminoAmarillo[15] = (Movimiento){ 'I', 20 };
    
     totalMovimientosAmarillo = sizeof(caminoAmarillo) / sizeof(caminoAmarillo[0]);
 
-    caminoCeleste[0] = (Movimiento){ 'A', 4 * div };
-    caminoCeleste[1] = (Movimiento){ 'D', 4 * div };
-    caminoCeleste[2] = (Movimiento){ 'B', 3 * div };
-    caminoCeleste[3] = (Movimiento){ 'D', 2 * div };
-    caminoCeleste[4] = (Movimiento){ 'B', 6 * div };
-    caminoCeleste[5] = (Movimiento){ 'D', 4 * div };
-    caminoCeleste[6] = (Movimiento){ 'B', 2 * div };
-    caminoCeleste[7] = (Movimiento){ 'I', 1 * div };
-    caminoCeleste[8] = (Movimiento){ 'B', 3 * div };
-    caminoCeleste[9] = (Movimiento){ 'D', 1 * div };
-    caminoCeleste[10] = (Movimiento){ 'B', 2 * div };
-    caminoCeleste[11] = (Movimiento){ 'I', 20 * div };
-    caminoCeleste[12] = (Movimiento){ 'A', 2 * div };
-    caminoCeleste[13] = (Movimiento){ 'D', 4 * div };
-    caminoCeleste[14] = (Movimiento){ 'A', 19 * div };
-    caminoCeleste[15] = (Movimiento){ 'D', 7 * div };
-    caminoCeleste[16] = (Movimiento){ 'A', 4 * div };
-    caminoCeleste[17] = (Movimiento){ 'D', 9 * div };
-    caminoCeleste[18] = (Movimiento){ 'B', 4 * div };
-    caminoCeleste[19] = (Movimiento){ 'I', 6 * div };
-    caminoCeleste[20] = (Movimiento){ 'B', 3 * div };
-    caminoCeleste[21] = (Movimiento){ 'I', 3 * div };
-    caminoCeleste[22] = (Movimiento){ 'B', 2 * div };
-    caminoCeleste[23] = (Movimiento){ 'I', 1 * div };
-    caminoCeleste[24] = (Movimiento){ 'B', 4 * div };
+    caminoCeleste[0] = (Movimiento){ 'A', 80 };
+    caminoCeleste[1] = (Movimiento){ 'D', 80 };
+    caminoCeleste[2] = (Movimiento){ 'B', 60 };
+    caminoCeleste[3] = (Movimiento){ 'D', 40 };
+    caminoCeleste[4] = (Movimiento){ 'B', 120 };
+    caminoCeleste[5] = (Movimiento){ 'D', 80 };
+    caminoCeleste[6] = (Movimiento){ 'B', 40 };
+    caminoCeleste[7] = (Movimiento){ 'I', 20 };
+    caminoCeleste[8] = (Movimiento){ 'B', 60 };
+    caminoCeleste[9] = (Movimiento){ 'D', 20 };
+    caminoCeleste[10] = (Movimiento){ 'B', 40 };
+    caminoCeleste[11] = (Movimiento){ 'I', 400 };
+    caminoCeleste[12] = (Movimiento){ 'A', 40 };
+    caminoCeleste[13] = (Movimiento){ 'D', 80 };
+    caminoCeleste[14] = (Movimiento){ 'A', 380 };
+    caminoCeleste[15] = (Movimiento){ 'D', 140 };
+    caminoCeleste[16] = (Movimiento){ 'A', 80 };
+    caminoCeleste[17] = (Movimiento){ 'D', 180 };
+    caminoCeleste[18] = (Movimiento){ 'B', 80 };
+    caminoCeleste[19] = (Movimiento){ 'I', 120 };
+    caminoCeleste[20] = (Movimiento){ 'B', 60 };
+    caminoCeleste[21] = (Movimiento){ 'I', 60 };
+    caminoCeleste[22] = (Movimiento){ 'B', 40 };
+    caminoCeleste[23] = (Movimiento){ 'I', 20 };
+    caminoCeleste[24] = (Movimiento){ 'B', 80 };
 
     totalMovimientosCeleste = sizeof(caminoCeleste) / sizeof(caminoCeleste[0]);
 
 
-    caminoRosa[0] = (Movimiento){ 'A', 2 * div };
-    caminoRosa[1] = (Movimiento){ 'I', 1 * div };
-    caminoRosa[2] = (Movimiento){ 'A', 2 * div };
-    caminoRosa[3] = (Movimiento){ 'I', 1 * div };
-    caminoRosa[4] = (Movimiento){ 'A', 2 * div };
-    caminoRosa[5] = (Movimiento){ 'I', 3 * div };
-    caminoRosa[6] = (Movimiento){ 'A', 3 * div };
-    caminoRosa[7] = (Movimiento){ 'I', 3 * div };
-    caminoRosa[8] = (Movimiento){ 'B', 3 * div };
-    caminoRosa[9] = (Movimiento){ 'I', 3 * div };
-    caminoRosa[10] = (Movimiento){ 'A', 7 * div };
-    caminoRosa[11] = (Movimiento){ 'D', 8 * div };
-    caminoRosa[12] = (Movimiento){ 'B', 4 * div };
-    caminoRosa[13] = (Movimiento){ 'D', 3 * div };
-    caminoRosa[14] = (Movimiento){ 'A', 4 * div };
-    caminoRosa[15] = (Movimiento){ 'D', 9 * div };
-    caminoRosa[16] = (Movimiento){ 'B', 6 * div };
-    caminoRosa[17] = (Movimiento){ 'I', 4 * div };
-    caminoRosa[18] = (Movimiento){ 'B', 6 * div };
-    caminoRosa[19] = (Movimiento){ 'D', 3 * div };
-    caminoRosa[20] = (Movimiento){ 'I', 3 * div };
-    caminoRosa[21] = (Movimiento){ 'B', 6 * div };
-    caminoRosa[22] = (Movimiento){ 'I', 2 * div };
-    caminoRosa[23] = (Movimiento){ 'A', 9 * div };
-    caminoRosa[24] = (Movimiento){ 'I', 4 * div };
-    caminoRosa[25] = (Movimiento){ 'B', 2 * div };
-    caminoRosa[26] = (Movimiento){ 'D', 1 * div };
-    caminoRosa[27] = (Movimiento){ 'B', 2 * div };
+    caminoRosa[0] = (Movimiento){ 'A', 40 };
+    caminoRosa[1] = (Movimiento){ 'I', 20 };
+    caminoRosa[2] = (Movimiento){ 'A', 40 };
+    caminoRosa[3] = (Movimiento){ 'I', 20 };
+    caminoRosa[4] = (Movimiento){ 'A', 40 };
+    caminoRosa[5] = (Movimiento){ 'I', 60 };
+    caminoRosa[6] = (Movimiento){ 'A', 60 };
+    caminoRosa[7] = (Movimiento){ 'I',60 };
+    caminoRosa[8] = (Movimiento){ 'B', 60 };
+    caminoRosa[9] = (Movimiento){ 'I', 60 };
+    caminoRosa[10] = (Movimiento){ 'A', 140 };
+    caminoRosa[11] = (Movimiento){ 'D', 160 };
+    caminoRosa[12] = (Movimiento){ 'B', 80 };
+    caminoRosa[13] = (Movimiento){ 'D', 60 };
+    caminoRosa[14] = (Movimiento){ 'A', 80 };
+    caminoRosa[15] = (Movimiento){ 'D', 180 };
+    caminoRosa[16] = (Movimiento){ 'B', 120 };
+    caminoRosa[17] = (Movimiento){ 'I', 80 };
+    caminoRosa[18] = (Movimiento){ 'B', 120 };
+    caminoRosa[19] = (Movimiento){ 'D', 60 };
+    caminoRosa[20] = (Movimiento){ 'I', 60 };
+    caminoRosa[21] = (Movimiento){ 'B', 120 };
+    caminoRosa[22] = (Movimiento){ 'I', 40 };
+    caminoRosa[23] = (Movimiento){ 'A', 180 };
+    caminoRosa[24] = (Movimiento){ 'I', 80 };
+    caminoRosa[25] = (Movimiento){ 'B', 40 };
+    caminoRosa[26] = (Movimiento){ 'D', 20 };
+    caminoRosa[27] = (Movimiento){ 'B', 40 };
 
     totalMovimientosRosa = sizeof(caminoRosa) / sizeof(caminoRosa[0]);
 }
@@ -573,26 +572,26 @@ void moverFantasma(Fantasma* fantasma, Movimiento* movimientos, int* indiceActua
 
             switch (movimiento.direccion) {
             case 'D': // Derecha
-                fantasma->movimientoX = CELDA_TAM / div;
+                fantasma->movimientoX = CELDA_TAM / 20;
                 fantasma->movimientoY = 0;
                 if(!fantasma->powerUp)
                     fantasma->textura = fantasma->texturaOriginal;
                 break;
             case 'I': // Izquierda
-                fantasma->movimientoX = -CELDA_TAM / div;
+                fantasma->movimientoX = -CELDA_TAM / 20;
                 fantasma->movimientoY = 0;
                 if (!fantasma->powerUp)
                     fantasma->textura = fantasma->texturaIzq;
                 break;
             case 'A': // Arriba
                 fantasma->movimientoX = 0;
-                fantasma->movimientoY = -CELDA_TAM / div;
+                fantasma->movimientoY = -CELDA_TAM / 20;
                 if (!fantasma->powerUp)
                     fantasma->textura = fantasma->texturaArr;
                 break;
             case 'B': // Abajo
                 fantasma->movimientoX = 0;
-                fantasma->movimientoY = CELDA_TAM / div;
+                fantasma->movimientoY = CELDA_TAM / 20;
                 if (!fantasma->powerUp)
                     fantasma->textura = fantasma->texturaAb;
                 break;
@@ -869,11 +868,11 @@ void animarMuerteFantasma(Fantasma* fantasma, int puntajeGanado) {
 
     while (fantasma->x != fantasma->xInicial || fantasma->y != fantasma->yInicial) {
 
-        if (fantasma->x < fantasma->xInicial) fantasma->x += CELDA_TAM / div;
-        else if (fantasma->x > fantasma->xInicial) fantasma->x -= CELDA_TAM / div;
+        if (fantasma->x < fantasma->xInicial) fantasma->x += CELDA_TAM / 20;
+        else if (fantasma->x > fantasma->xInicial) fantasma->x -= CELDA_TAM / 20;
 
-        if (fantasma->y < fantasma->yInicial) fantasma->y += CELDA_TAM / div;
-        else if (fantasma->y > fantasma->yInicial) fantasma->y -= CELDA_TAM / div;
+        if (fantasma->y < fantasma->yInicial) fantasma->y += CELDA_TAM / 20;
+        else if (fantasma->y > fantasma->yInicial) fantasma->y -= CELDA_TAM / 20;
 
         SDL_RenderClear(renderer);
         dibujarLaberinto();
@@ -1127,7 +1126,6 @@ void mostrarNivelYVidas(SDL_Renderer* renderer, TTF_Font* fuente, int nivel, int
 
 int main(int argc, char* argv[]) {
 
-    //srand(time(NULL));
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Error al inicializar SDL: %s\n", SDL_GetError());
